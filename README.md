@@ -43,7 +43,7 @@ git clone https://github.com/ainow/insta-carousel-builder.git
 cd insta-carousel-builder
 
 # 2. 의존성 설치
-pip install python-dotenv google-genai
+pip install python-dotenv google-genai pillow
 npm install  # (optional, 품질 체크 훅용)
 
 # 3. API 키 세팅
@@ -116,6 +116,7 @@ insta-carousel-builder/
 ### 알려진 한계
 
 - **한글 정확도 비결정성**: 같은 프롬프트라도 세션마다 1~2글자 변형 가능 (`통` → `튱` 등). 100% 정확 보장 안 됨 → **생성 후 육안 검수 필수**
+- **출력 크기 보정**: Gemini 응답(예: 928×1152 JPEG)은 중앙 크롭 후 1080×1350 PNG 로 자동 변환. 4:5 와 비율 차이가 커서 5% 넘게 잘리면 경고 출력
 - **가끔 가짜 인스타 핸들/워터마크 추가**: Gemini 가 학습 데이터 영향으로 본 적 없는 핸들(예: `@DevOpsPro`) 을 자체 추가하는 경우 있음 → 발견 시 해당 슬라이드만 재생성
 - **한글 오타 자동 감지 미구현**: 현재 OCR 기반 오타 감지 없음. `carousel-reviewer` 서브에이전트가 LLM 비전으로 점검
 

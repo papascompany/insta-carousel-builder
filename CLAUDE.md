@@ -145,7 +145,7 @@ ANTHROPIC_API_KEY=              # (옵션) reviewer 서브에이전트 API 호�
 
 ```bash
 # 나노바나나 엔진
-pip install python-dotenv google-genai
+pip install python-dotenv google-genai pillow
 
 # HTML/Puppeteer 엔진
 npm install   # puppeteer 자동 설치

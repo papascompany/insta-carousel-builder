@@ -21,6 +21,7 @@ from __future__ import annotations
 
 import argparse
 import base64
+import io
 import json
 import os
 import sys
@@ -32,14 +33,45 @@ try:
     from dotenv import load_dotenv
     from google import genai
     from google.genai import types
+    from PIL import Image
 except ImportError as e:
     print(f"[ERROR] 의존성 누락: {e}")
-    print("        pip install python-dotenv google-genai")
+    print("        pip install python-dotenv google-genai pillow")
     sys.exit(1)
 
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_SLIDES_JSON = REPO_ROOT / "templates" / "slides.example.json"
+TARGET_SIZE = (1080, 1350)  # 인스타 4:5 (CLAUDE.md 품질 킬라인 #1)
+CROP_WARN_RATIO = 0.05  # 한 변이 5% 넘게 잘리면 경고 (가장자리 텍스트 손실 위험)
+
+
+def normalize_image(blob: bytes, out_path: Path) -> dict:
+    """Gemini 응답 이미지(JPEG/PNG, 임의 크기)를 1080×1350 PNG 로 변환.
+
+    비율이 4:5 와 다르면 중앙 기준으로 넘치는 쪽만 잘라낸 뒤(cover) 리사이즈한다.
+    """
+    with Image.open(io.BytesIO(blob)) as im:
+        src_format = im.format
+        src_w, src_h = im.size
+        im = im.convert("RGB")
+        tw, th = TARGET_SIZE
+        if src_w * th > src_h * tw:  # 원본이 더 넓음 → 좌우 크롭
+            crop_w = round(src_h * tw / th)
+            left = (src_w - crop_w) // 2
+            box = (left, 0, left + crop_w, src_h)
+        else:  # 원본이 더 높음 → 상하 크롭
+            crop_h = round(src_w * th / tw)
+            top = (src_h - crop_h) // 2
+            box = (0, top, src_w, top + crop_h)
+        cropped = im.crop(box)
+        crop_ratio = 1 - (cropped.width * cropped.height) / (src_w * src_h)
+        cropped.resize(TARGET_SIZE, Image.Resampling.LANCZOS).save(out_path, format="PNG", optimize=True)
+    return {
+        "source": f"{src_format} {src_w}x{src_h}",
+        "crop_ratio": round(crop_ratio, 4),
+        "upscaled": src_w < tw or src_h < th,
+    }
 
 
 def load_slides(slides_path: Path) -> list[dict]:
@@ -164,28 +196,29 @@ def main():
         t0 = time.time()
         try:
             resp = client.models.generate_content(model=args.model, contents=[prompt])
-            image_saved = False
+            norm = None
             for part in resp.candidates[0].content.parts:
                 if getattr(part, "inline_data", None) and part.inline_data.data:
                     blob = part.inline_data.data
                     if isinstance(blob, str):
                         blob = base64.b64decode(blob)
-                    with open(out_path, "wb") as f:
-                        f.write(blob)
-                    image_saved = True
+                    norm = normalize_image(blob, out_path)
                     break
             dt = time.time() - t0
-            if image_saved:
+            if norm:
                 kb = out_path.stat().st_size / 1024
-                print(f"OK ({dt:.1f}s, {kb:.0f}KB) -> {out_path.name}")
-                summary.append((n, "OK", f"{dt:.1f}s", f"{kb:.0f}KB"))
+                note = f"{norm['source']} → {TARGET_SIZE[0]}x{TARGET_SIZE[1]} PNG, crop {norm['crop_ratio']:.1%}"
+                print(f"OK ({dt:.1f}s, {kb:.0f}KB, {note}) -> {out_path.name}")
+                if norm["crop_ratio"] > CROP_WARN_RATIO:
+                    print(f"  [WARN] 4:5 비율과 차이가 커서 {norm['crop_ratio']:.1%} 잘림 — 가장자리 텍스트 확인 필요")
+                summary.append((n, "OK", f"{dt:.1f}s", f"{kb:.0f}KB", norm))
             else:
                 print(f"FAIL ({dt:.1f}s, no image in response)")
-                summary.append((n, "FAIL_NO_IMG", f"{dt:.1f}s", "-"))
+                summary.append((n, "FAIL_NO_IMG", f"{dt:.1f}s", "-", None))
         except Exception as e:
             dt = time.time() - t0
             print(f"ERR ({dt:.1f}s): {e}")
-            summary.append((n, "ERR", f"{dt:.1f}s", str(e)[:60]))
+            summary.append((n, "ERR", f"{dt:.1f}s", str(e)[:60], None))
 
     # 재현용 프롬프트 (--only 실행이어도 전체 slides JSON 기준)
     write_json(out_dir / "prompts.json", {"source": str(slides_path), "model": args.model, **data})
@@ -200,15 +233,15 @@ def main():
             "model": args.model,
             "only": sorted(s["n"] for s in slides) if args.only else None,
             "slides": [
-                {"n": n, "status": status, "time": dt, "info": info}
-                for n, status, dt, info in summary
+                {"n": n, "status": status, "time": dt, "info": info, "image": norm}
+                for n, status, dt, info, norm in summary
             ],
         },
         [s.get("role", "") for s in data.get("slides", [])],
     )
 
     print("\n=== SUMMARY ===")
-    for n, status, dt, info in summary:
+    for n, status, dt, info, _ in summary:
         print(f"  slide-{n:02d}  {status:12}  {dt:>7}  {info}")
     print(f"\nOutput: {out_dir}")
 
