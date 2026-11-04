@@ -17,12 +17,18 @@ node scripts/quality-check.js --dir output/$ARGUMENTS
 - 파일 크기 분포 (너무 작으면 깨진 이미지)
 - `templates/slides.<topic>.json` 스키마 검증 (있다면)
 
+나노바나나 결과물이면 한글 오타 검사도 실행:
+
+```bash
+python scripts/typo-check.py --topic $ARGUMENTS
+```
+
 ## 2. 정성 리뷰
 
 **`carousel-reviewer` 서브에이전트 dispatch**:
 
 > output/$ARGUMENTS 폴더의 9장 PNG 를 10항목 채점해줘.
-> 한글 오타는 육안으로 slide별 확인.
+> 한글 오타는 typo-report.json 결과 반영 + 따옴표 밖 문구는 육안 확인.
 > 총점 + 상위 3개 개선 포인트 + 판정(PASS/HOLD/FAIL).
 
 ## 3. 리포트 저장

@@ -91,6 +91,7 @@ insta-carousel-builder/
 │   ├── nanobanana-gen.py      # 이미지 생성기 (Python, Gemini SDK)
 │   ├── html-carousel-gen.js   # HTML → PNG 캡처 (Puppeteer)
 │   ├── quality-check.js       # 구조/해상도/파일 검사 (Node.js)
+│   ├── typo-check.py          # 한글 오타 검사 (Gemini 비전 전사 + 스크립트 판정)
 │   └── hook-post-write.js     # PostToolUse 훅 → quality-check 자동 실행
 ├── output/                     # 생성 결과 (gitignored)
 └── docs/                       # 샘플 결과물 (sample-output / sample-html)
@@ -118,7 +119,7 @@ insta-carousel-builder/
 - **한글 정확도 비결정성**: 같은 프롬프트라도 세션마다 1~2글자 변형 가능 (`통` → `튱` 등). 100% 정확 보장 안 됨 → **생성 후 육안 검수 필수**
 - **출력 크기 보정**: Gemini 응답(예: 928×1152 JPEG)은 중앙 크롭 후 1080×1350 PNG 로 자동 변환. 4:5 와 비율 차이가 커서 5% 넘게 잘리면 경고 출력
 - **가끔 가짜 인스타 핸들/워터마크 추가**: Gemini 가 학습 데이터 영향으로 본 적 없는 핸들(예: `@DevOpsPro`) 을 자체 추가하는 경우 있음 → 발견 시 해당 슬라이드만 재생성
-- **한글 오타 자동 감지 미구현**: 현재 OCR 기반 오타 감지 없음. `carousel-reviewer` 서브에이전트가 LLM 비전으로 점검
+- **한글 오타 자동 감지**: `python scripts/typo-check.py --topic <topic>` — Gemini 비전이 글자를 그대로 전사하고, 프롬프트의 따옴표 안 한글 문구와 일치하는지 스크립트가 판정. 따옴표로 지정하지 않은 문구는 검사 대상이 아님
 
 ### 재생성 팁
 

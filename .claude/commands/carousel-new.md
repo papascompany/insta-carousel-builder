@@ -67,11 +67,21 @@ python scripts/nanobanana-gen.py --topic <키워드> --slides templates/slides.<
 
 ## Phase 4 — 검증
 
-**`carousel-reviewer` 서브에이전트 dispatch**:
+**4-1. 한글 오타 검사 (나노바나나 엔진만)**:
+
+```bash
+python scripts/typo-check.py --topic <topic>
+```
+
+- `FAIL` → 출력된 `--only N` 으로 해당 슬라이드만 재생성 후 typo-check 재실행 (최대 2회, 그래도 FAIL 이면 CEO 보고)
+- `ERROR`(전사 실패) → 재생성하지 말고 typo-check 만 재실행
+- 핸들/워터마크 `WARN` → 해당 슬라이드 재생성
+
+**4-2. `carousel-reviewer` 서브에이전트 dispatch**:
 
 > output/<topic>/ 의 9장 PNG 를 10항목 채점해줘.
 > - 자동 검사: `node scripts/quality-check.js --dir output/<topic>`
-> - 육안 검수: 한글 오타 slide별 확인
+> - 한글 오타: `output/<topic>/typo-report.json` 결과 반영 + 따옴표 밖 문구는 육안 확인
 > - 총점 + 상위 3개 개선 포인트 + 판정 (PASS/HOLD/FAIL)
 > - 직접 수정하지 말고 지적만
 

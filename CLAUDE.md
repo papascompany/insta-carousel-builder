@@ -61,7 +61,7 @@ Phase 3b (HTML):
 | # | 기준 | 허용 범위 |
 |:---:|:---|:---|
 | 1 | **해상도** | 1080×1350 (4:5 인스타 권장) |
-| 2 | **한글 렌더링** | 오타 없어야 함 (자동 OCR 검사 미구현 → `carousel-reviewer` 비전 점검 + 육안 검수) |
+| 2 | **한글 렌더링** | 오타 없어야 함 (나노바나나: `scripts/typo-check.py` — Gemini 비전 전사 + 스크립트 판정) |
 | 3 | **디자인 DNA 일관성** | 9장 배경색/폰트/액센트 컬러 통일 |
 | 4 | **Cover 후킹** | 3초 내 스크롤 멈춤 가능한 헤드라인 |
 | 5 | **1장당 정보 밀도** | 한 슬라이드 = 한 포인트 (여러 개 = 혼란) |
@@ -97,8 +97,9 @@ Phase 2 [프롬프트 설계] → carousel-prompt-writer 서브에이전트 disp
 Phase 3 [이미지 생성]  → scripts/nanobanana-gen.py 실행
                           Gemini 3.0 Pro Image 로 9장 PNG 생성
 Phase 4 [품질 검증]    → scripts/quality-check.js 자동 실행
+                          → scripts/typo-check.py --topic <topic> (나노바나나만)
+                            FAIL 슬라이드만 --only 로 재생성 → typo-check 재실행
                           → carousel-reviewer 서브에이전트 10항목 정성 채점
-                          오타 감지 시 해당 슬라이드만 재생성
 ```
 
 **서브에이전트 원칙**:
@@ -129,6 +130,8 @@ output/_index.json                # 주제별 최근 엔진/구조/Cover 훅/역
 
 - 수치는 반드시 `brand-facts.md` 에서만 인용
 - 이미지 생성 결과의 한글 오타 판정은 **스크립트가 수행** (LLM 판단 금지)
+  - `typo-check.py`: Gemini 는 보이는 글자를 고치지 않고 전사만, 프롬프트 따옴표 안 한글 문구와의 일치 판정은 스크립트
+  - 전사 실패(`ERROR`)는 오타가 아님 → 재생성하지 말고 검사만 재실행
 - 스크립트 경고 발생 시 무시하지 말고 재생성
 
 ---
@@ -138,6 +141,7 @@ output/_index.json                # 주제별 최근 엔진/구조/Cover 훅/역
 `.env` 파일 (git 추적 금지):
 ```
 GEMINI_API_KEY=AIza...         # 나노바나나 엔진 사용 시만 필수 (https://aistudio.google.com/apikey)
+GEMINI_OCR_MODEL=               # (옵션) typo-check 전사 모델, 기본 gemini-2.5-flash
 ANTHROPIC_API_KEY=              # (옵션) reviewer 서브에이전트 API 호출용
 ```
 
