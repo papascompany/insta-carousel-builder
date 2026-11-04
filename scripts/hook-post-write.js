@@ -6,6 +6,7 @@
  *
  * 동작:
  *   - templates/slides.*.json 저장 시 → quality-check.js --prompt <파일> 자동 실행
+ *   - output/<topic>/slides/slide-NN.html 저장 시 → quality-check.js --html <파일> 자동 실행
  *   - output/<topic>/slide-09.png 저장 시 → 같은 폴더에 대해 quality-check.js --dir 자동 실행
  *
  * stdin 으로 PostToolUse payload 받음 (Claude Code 훅 규약).
@@ -58,7 +59,13 @@ function main() {
     return run(['--prompt', filePath]);
   }
 
-  // 2) 슬라이드 PNG 저장 시 — 마지막 장(slide-09)일 때만 폴더 전체 검증
+  // 2) HTML 슬라이드 저장 시 (output/<topic>/slides/slide-NN.html) — 해당 파일 금칙어 검사
+  if (/^slide-\d{2}\.html$/.test(fname) && basename(dir) === 'slides' && basename(dirname(dirname(dir))) === 'output') {
+    console.log(`\n[hook] HTML 슬라이드 감지 → 금칙어 검사`);
+    return run(['--html', filePath]);
+  }
+
+  // 3) 슬라이드 PNG 저장 시 — 마지막 장(slide-09)일 때만 폴더 전체 검증
   // output/ 밖(docs/sample-output 등)은 검사 리포트 파일이 생기므로 제외
   if (fname === 'slide-09.png' && basename(dirname(dir)) === 'output') {
     console.log(`\n[hook] slide-09 감지 → 폴더 전체 검증`);

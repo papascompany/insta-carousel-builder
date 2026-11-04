@@ -69,7 +69,7 @@ Phase 3b (HTML):
 | 7 | **금칙어** | `knowledge/banned-words.json` 참조 |
 | 8 | **톤** | 친근한 전문가. "안녕하세요 오늘은" 같은 filler 금지 |
 
-→ `scripts/quality-check.js` 가 생성 직후 자동 검사 (구조/개수/파일 크기 — 해상도는 아직 미검사). 오타 발견 시 해당 슬라이드만 `--only N` 으로 재생성.
+→ `scripts/quality-check.js` 가 생성 직후 자동 검사 (구조/개수/해상도·실제 포맷/파일 크기/금칙어 — HTML 트랙은 `--html` 로 금칙어 검사). 오타 발견 시 해당 슬라이드만 `--only N` 으로 재생성.
 
 ---
 
