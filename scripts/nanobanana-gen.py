@@ -25,6 +25,7 @@ import json
 import os
 import sys
 import time
+from datetime import datetime, timezone
 from pathlib import Path
 
 try:
@@ -56,6 +57,48 @@ def load_slides(slides_path: Path) -> list[dict]:
 
 def render_prompt(slide: dict, common_style: str) -> str:
     return f"{common_style}\n\n{slide['prompt']}"
+
+
+def now_iso() -> str:
+    return datetime.now(timezone.utc).isoformat(timespec="seconds")
+
+
+def read_json(path: Path, default):
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except (FileNotFoundError, json.JSONDecodeError):
+        return default
+
+
+def write_json(path: Path, data) -> None:
+    tmp = path.with_suffix(path.suffix + ".tmp")
+    tmp.write_text(json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+    tmp.replace(path)
+
+
+def record_run(out_dir: Path, topic: str, engine: str, run: dict, roles: list[str]) -> None:
+    """output/<topic>/metadata.json 에 실행 이력 추가, output/_index.json 에 주제 요약 갱신."""
+    meta_path = out_dir / "metadata.json"
+    meta = read_json(meta_path, {})
+    meta.update({"topic": topic, "engine": engine, "updated_at": run["finished_at"]})
+    meta.setdefault("runs", []).append(run)
+    write_json(meta_path, meta)
+
+    brief = read_json(out_dir / "brief.json", {})
+    index_path = out_dir.parent / "_index.json"
+    index = read_json(index_path, {"carousels": []})
+    entries = [e for e in index.get("carousels", []) if e.get("topic") != topic]
+    entries.append({
+        "topic": topic,
+        "engine": engine,
+        "updated_at": run["finished_at"],
+        "structure": brief.get("recommended_structure"),
+        "cover_hook": brief.get("recommended_cover_hook"),
+        "roles": roles,
+    })
+    entries.sort(key=lambda e: e.get("updated_at") or "", reverse=True)
+    index["carousels"] = entries
+    write_json(index_path, index)
 
 
 def main():
@@ -109,6 +152,8 @@ def main():
 
     client = genai.Client(api_key=api_key)
     summary = []
+    started_at = now_iso()
+    t_run = time.time()
 
     for slide in slides:
         n = slide["n"]
@@ -141,6 +186,26 @@ def main():
             dt = time.time() - t0
             print(f"ERR ({dt:.1f}s): {e}")
             summary.append((n, "ERR", f"{dt:.1f}s", str(e)[:60]))
+
+    # 재현용 프롬프트 (--only 실행이어도 전체 slides JSON 기준)
+    write_json(out_dir / "prompts.json", {"source": str(slides_path), "model": args.model, **data})
+    record_run(
+        out_dir,
+        args.topic,
+        "nanobanana",
+        {
+            "started_at": started_at,
+            "finished_at": now_iso(),
+            "duration_sec": round(time.time() - t_run, 1),
+            "model": args.model,
+            "only": sorted(s["n"] for s in slides) if args.only else None,
+            "slides": [
+                {"n": n, "status": status, "time": dt, "info": info}
+                for n, status, dt, info in summary
+            ],
+        },
+        [s.get("role", "") for s in data.get("slides", [])],
+    )
 
     print("\n=== SUMMARY ===")
     for n, status, dt, info in summary:

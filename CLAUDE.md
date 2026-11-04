@@ -113,9 +113,12 @@ Phase 4 [품질 검증]    → scripts/quality-check.js 자동 실행
 ```
 output/{topic}/
 ├── slide-01.png ~ slide-09.png   # 1080×1350 PNG 9장
-├── prompts.json                  # 사용된 프롬프트 (재현용)
-├── metadata.json                 # 생성 시간/비용/품질 리포트
+├── prompts.json                  # 사용된 프롬프트 (재현용, 나노바나나 엔진이 자동 기록)
+├── metadata.json                 # 실행 이력: 시간/모델/슬라이드별 결과 (두 엔진 자동 기록, 비용은 미기록)
+├── quality-report.json           # quality-check.js --dir 결과
 └── README.md                     # 주제 요약 + 사용 가이드
+
+output/_index.json                # 주제별 최근 엔진/구조/Cover 훅/역할 목록 (생성기가 자동 갱신)
 ```
 
 **명명 규칙**: `{YYYY-MM-DD}_{주제압축}` (공백 제거, 특수문자 금지)
