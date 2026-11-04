@@ -89,10 +89,11 @@ insta-carousel-builder/
 │   └── slides.example.json    # 9장 프롬프트 예제 (복사해서 수정)
 ├── scripts/
 │   ├── nanobanana-gen.py      # 이미지 생성기 (Python, Gemini SDK)
-│   ├── quality-check.js       # PostToolUse 훅 (Node.js)
-│   └── duplicate-check.js
+│   ├── html-carousel-gen.js   # HTML → PNG 캡처 (Puppeteer)
+│   ├── quality-check.js       # 구조/해상도/파일 검사 (Node.js)
+│   └── hook-post-write.js     # PostToolUse 훅 → quality-check 자동 실행
 ├── output/                     # 생성 결과 (gitignored)
-└── docs/GETTING-STARTED.md
+└── docs/                       # 샘플 결과물 (sample-output / sample-html)
 ```
 
 ---
@@ -120,11 +121,10 @@ insta-carousel-builder/
 
 ### 재생성 팁
 
-오타 1~2장은 아래로 해당 슬라이드만 재생성 (현재는 전체 재실행, 다음 버전에서 `--only N` 추가 예정):
+오타 1~2장은 `--only` 로 해당 슬라이드만 재생성 (나머지 PNG 는 그대로 유지):
 
 ```bash
-# 임시로 slides JSON 의 다른 슬라이드를 비워두고 실행
-python scripts/nanobanana-gen.py --topic claude-code-tips --slides templates/slides.partial.json
+python scripts/nanobanana-gen.py --topic claude-code-tips --only 3,7
 ```
 
 ---

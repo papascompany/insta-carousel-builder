@@ -59,7 +59,8 @@ function main() {
   }
 
   // 2) 슬라이드 PNG 저장 시 — 마지막 장(slide-09)일 때만 폴더 전체 검증
-  if (fname === 'slide-09.png') {
+  // output/ 밖(docs/sample-output 등)은 검사 리포트 파일이 생기므로 제외
+  if (fname === 'slide-09.png' && basename(dirname(dir)) === 'output') {
     console.log(`\n[hook] slide-09 감지 → 폴더 전체 검증`);
     return run(['--dir', dir]);
   }

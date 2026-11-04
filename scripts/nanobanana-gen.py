@@ -6,6 +6,8 @@ insta-carousel-builder — 나노바나나 Pro(Gemini 3.0 Pro Image) 인스타 �
     # 2. slides.json 에 9장 프롬프트 수정 (또는 기본 예제 그대로 사용)
     # 3. 실행:
     python scripts/nanobanana-gen.py --topic my-topic
+    # 오타 난 슬라이드만 재생성:
+    python scripts/nanobanana-gen.py --topic my-topic --only 3,7
 
 결과:
     output/{topic}/slide-01.png ~ slide-09.png
@@ -62,6 +64,7 @@ def main():
     ap.add_argument("--slides", default=str(DEFAULT_SLIDES_JSON), help="slides.json 경로")
     ap.add_argument("--model", default="gemini-3-pro-image-preview", help="Gemini 이미지 모델 ID")
     ap.add_argument("--dry-run", action="store_true", help="API 호출 없이 프롬프트만 출력")
+    ap.add_argument("--only", default="", help="재생성할 슬라이드 번호 (예: 3 또는 3,7). 나머지 PNG 는 유지")
     args = ap.parse_args()
 
     try:
@@ -82,6 +85,18 @@ def main():
     common_style = data.get("common_style", "")
     slides = data.get("slides", [])
 
+    if args.only:
+        try:
+            wanted = {int(x) for x in args.only.split(",") if x.strip()}
+        except ValueError:
+            print(f"[ERROR] --only 는 쉼표로 구분한 숫자여야 합니다: {args.only}")
+            sys.exit(1)
+        missing = sorted(wanted - {s["n"] for s in slides})
+        if missing:
+            print(f"[ERROR] slides 에 없는 번호: {missing}")
+            sys.exit(1)
+        slides = [s for s in slides if s["n"] in wanted]
+
     out_dir = REPO_ROOT / "output" / args.topic
     out_dir.mkdir(parents=True, exist_ok=True)
 
@@ -100,7 +115,7 @@ def main():
         out_path = out_dir / f"slide-{n:02d}.png"
         prompt = render_prompt(slide, common_style)
 
-        print(f"[{n}/{len(slides)}] generating {slide.get('role','?')}...", end=" ", flush=True)
+        print(f"[slide-{n:02d}] generating {slide.get('role','?')}...", end=" ", flush=True)
         t0 = time.time()
         try:
             resp = client.models.generate_content(model=args.model, contents=[prompt])

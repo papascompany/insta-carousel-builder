@@ -13,7 +13,7 @@
 - "AI 글쓰기 7가지 꿀팁으로 인스타 카드뉴스 써줘"
 - "챗GPT 프롬프트 주제로 캐러셀 9장 만들자"
 
-수동 호출: `/carousel-research`, `/carousel-prompt`, `/carousel-gen`, `/carousel-quality`
+수동 호출: `/carousel-quality` (단계별 실행은 해당 서브에이전트 / 스크립트를 직접 호출)
 
 ---
 
@@ -61,7 +61,7 @@ Phase 3b (HTML):
 | # | 기준 | 허용 범위 |
 |:---:|:---|:---|
 | 1 | **해상도** | 1080×1350 (4:5 인스타 권장) |
-| 2 | **한글 렌더링** | 오타 없어야 함 (`duplicate-check.js` 로 체크) |
+| 2 | **한글 렌더링** | 오타 없어야 함 (자동 OCR 검사 미구현 → `carousel-reviewer` 비전 점검 + 육안 검수) |
 | 3 | **디자인 DNA 일관성** | 9장 배경색/폰트/액센트 컬러 통일 |
 | 4 | **Cover 후킹** | 3초 내 스크롤 멈춤 가능한 헤드라인 |
 | 5 | **1장당 정보 밀도** | 한 슬라이드 = 한 포인트 (여러 개 = 혼란) |
@@ -69,7 +69,7 @@ Phase 3b (HTML):
 | 7 | **금칙어** | `knowledge/banned-words.json` 참조 |
 | 8 | **톤** | 친근한 전문가. "안녕하세요 오늘은" 같은 filler 금지 |
 
-→ `scripts/quality-check.js` 가 생성 직후 자동 검사. 한글 오타 감지 시 해당 슬라이드만 재생성.
+→ `scripts/quality-check.js` 가 생성 직후 자동 검사 (구조/개수/파일 크기 — 해상도는 아직 미검사). 오타 발견 시 해당 슬라이드만 `--only N` 으로 재생성.
 
 ---
 
@@ -79,7 +79,7 @@ Phase 3b (HTML):
 1. `knowledge/brand-facts.md` — 수치/브랜드 SSOT (이 파일 외 숫자 금지)
 2. `knowledge/patterns/carousel-structure.md` — 9장 구조 공식
 3. `templates/slides.example.json` — 프롬프트 템플릿
-4. `output/_index.json` — 최근 패턴 → 의도적으로 다른 구조 선택
+4. `output/_index.json` (있다면) — 최근 패턴 → 의도적으로 다른 구조 선택
 
 **상황별 추가 Read**:
 - 주제 리서치: `knowledge/reference/` (있다면)
