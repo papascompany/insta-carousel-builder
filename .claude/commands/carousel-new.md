@@ -33,7 +33,13 @@ argument-hint: <주제/키워드>
 
 ---
 
-## Phase 2 — 프롬프트 설계
+## 엔진 선택
+
+CLAUDE.md "듀얼 엔진" 기준으로 판단. 명시 없으면 **HTML(기본)**. 아래 Phase 2·3 은 엔진별로 a(나노바나나) / b(HTML) 중 하나만 수행.
+
+---
+
+## Phase 2a — 프롬프트 설계 (나노바나나)
 
 **`carousel-prompt-writer` 서브에이전트 dispatch**:
 
@@ -50,9 +56,31 @@ argument-hint: <주제/키워드>
 
 **주의**: 저장 순간 PostToolUse 훅이 `quality-check.js --prompt templates/slides.<topic>.json` 자동 실행 — JSON 스키마 검증.
 
+## Phase 2b — HTML 작성 (HTML 엔진, 기본)
+
+**`carousel-html-writer` 서브에이전트 dispatch**:
+
+> output/<폴더>/brief.json 을 읽고 9장 HTML 을 output/<폴더>/slides/slide-01~09.html 로 작성해줘.
+> - 디자인 레퍼런스: docs/sample-html/
+> - 본문 라벨은 brief 의 구조에 맞게 (TIP / STEP / BEFORE/AFTER 등)
+> - 에이전트 정의의 모바일 가독성 규칙(텍스트 24px 이상, 보조 텍스트 투명도 0.6 이상) 준수
+> - PNG 캡처는 하지 말 것
+
+저장마다 훅이 금칙어 검사(`quality-check.js --html`). 훅은 FAIL 일 때만 결과를 돌려주므로 출력이 없으면 PASS.
+
 ---
 
-## Phase 3 — 이미지 생성
+## Phase 3b — 캡처 (HTML 엔진)
+
+```bash
+node scripts/html-carousel-gen.js --topic <폴더>
+```
+
+- 9장 2160×2700 PNG (1080×1350 2배) 캡처 → quality-check 자동 실행, FAIL 이면 exit 1
+- Pretendard 로드 실패 시 캡처 중단, 24px 미만 텍스트는 "모바일 가독성 경고" — 경고가 나오면 Phase 2b 로 돌아가 수정
+- 수정한 장만 다시: `--only 3,7`
+
+## Phase 3a — 이미지 생성 (나노바나나)
 
 ```bash
 python scripts/nanobanana-gen.py --topic <키워드> --slides templates/slides.<topic>.json
