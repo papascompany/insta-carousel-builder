@@ -13,7 +13,7 @@ AI 이미지 도구로 인스타 캐러셀을 만들면 한글이 깨지고 AI �
 |:---|:---|:---|
 | **명령어** | `python scripts/nanobanana-gen.py` | `node scripts/html-carousel-gen.js` |
 | **한글 정확도** | 88~98% (비결정적) | **100% (결정적)** |
-| **비용** | ~500~1000원 / 9장 | **0원** |
+| **비용** | 9장당 약 $1.2 (Pro) / 약 $0.6 (Flash) — **유료 등급 필수** | **0원** (API 키 불필요) |
 | **시간** | ~4분 30초 | ~30초 (캡처만) |
 | **디자인 자유도** | AI 해석 (가끔 워터마크) | **100% 통제** |
 | **수정 용이성** | 재생성 필요 | **한 글자도 즉시 Edit** |
@@ -35,6 +35,31 @@ AI 이미지 도구로 인스타 캐러셀을 만들면 한글이 깨지고 AI �
 
 ---
 
+## 💳 Gemini API 무료 등급 안내
+
+**나노바나나 엔진(이미지 생성)은 Gemini API 무료 등급에서 사용할 수 없습니다.** 결제 계정이 연결된 프로젝트(Tier 1 이상)의 API 키가 필요합니다. 무료 등급 프로젝트에서 호출하면 한도 0 으로 `429` 오류가 납니다.
+
+| 기능 | 무료 등급 | 비고 |
+|:---|:---:|:---|
+| 🍌 나노바나나 생성 (`gemini-3-pro-image-preview`, `gemini-3.1-flash-image-preview`) | ❌ | 이미지 모델은 유료 전용 |
+| 🎨 HTML/Puppeteer 생성 | ✅ | Gemini 미사용 |
+| `quality-check.js` (구조·해상도·금칙어) | ✅ | 로컬 실행 |
+| `typo-check.py` (한글 오타) | ✅ | 텍스트 모델(Flash 계열) 사용 — 모델별 무료 여부는 공식 가격표 확인 |
+
+**공식 단가 (2026-11 기준, 이미지 1장)**: Pro 1K/2K 약 $0.134 · 4K 약 $0.24 / Flash 1K 약 $0.067. 9장 기준 Pro 약 $1.2, Flash 약 $0.6 (재생성·오타 검사 비용 별도). 가격과 무료 범위는 자주 바뀌므로 사용 전 [공식 가격표](https://ai.google.dev/gemini-api/docs/pricing) 를 확인하세요.
+
+**유료 등급 전환 체크리스트**
+1. Google Cloud 콘솔 → 결제 계정을 무료 체험판에서 유료로 업그레이드하고 결제 수단 인증
+2. AI Studio 에서 **그 결제 계정에 연결된 프로젝트**로 API 키 발급 (연결 안 된 프로젝트의 키는 계속 무료 등급)
+3. AI Studio 결제 화면에서 등급이 Tier 1 로 표시되는지 확인
+4. 1장만 시험 생성: `python scripts/nanobanana-gen.py --topic test --only 1`
+
+> GCP 크레딧(예: Google Developer Program 크레딧)이 있어도 등급이 무료이면 API 호출에 쓰이지 않습니다. 크레딧 적용 범위는 Cloud 콘솔 → 결제 → 크레딧에서 확인하세요.
+
+**결제 없이 시작하려면 HTML 엔진**을 쓰세요: `docs/sample-html/` 9장을 `output/<topic>/slides/` 에 복사 후 `node scripts/html-carousel-gen.js --topic <topic>`.
+
+---
+
 ## 빠른 시작 (Quickstart)
 
 ```bash
@@ -43,10 +68,10 @@ git clone https://github.com/ainow/insta-carousel-builder.git
 cd insta-carousel-builder
 
 # 2. 의존성 설치
-pip install python-dotenv google-genai
+pip install python-dotenv google-genai pillow
 npm install  # (optional, 품질 체크 훅용)
 
-# 3. API 키 세팅
+# 3. API 키 세팅 (나노바나나는 유료 등급 키 필요 — 위 "무료 등급 안내" 참고)
 cp .env.example .env
 # .env 열어서 GEMINI_API_KEY 채우기 — https://aistudio.google.com/apikey
 
@@ -89,10 +114,12 @@ insta-carousel-builder/
 │   └── slides.example.json    # 9장 프롬프트 예제 (복사해서 수정)
 ├── scripts/
 │   ├── nanobanana-gen.py      # 이미지 생성기 (Python, Gemini SDK)
-│   ├── quality-check.js       # PostToolUse 훅 (Node.js)
-│   └── duplicate-check.js
+│   ├── html-carousel-gen.js   # HTML → PNG 캡처 (Puppeteer)
+│   ├── quality-check.js       # 구조/해상도/파일 검사 (Node.js)
+│   ├── typo-check.py          # 한글 오타 검사 (Gemini 비전 전사 + 스크립트 판정)
+│   └── hook-post-write.js     # PostToolUse 훅 → quality-check 자동 실행
 ├── output/                     # 생성 결과 (gitignored)
-└── docs/GETTING-STARTED.md
+└── docs/                       # 샘플 결과물 (sample-output / sample-html)
 ```
 
 ---
@@ -108,23 +135,23 @@ insta-carousel-builder/
 |:---|:---|
 | 생성 성공률 | **9/9 (100%)** |
 | 총 소요 시간 | 4분 28초 (24~31초/장) |
-| 평균 파일 크기 | 487 KB |
-| 해상도 | 1080×1350 (4:5) |
+| 평균 파일 크기 | 1162 KB (PNG) — Gemini 원본 JPEG 기준 487 KB |
+| 해상도 | 1080×1350 (4:5) — Gemini 원본 928×1152 JPEG 를 `nanobanana-gen.py` 정규화(중앙 크롭 0.65% + 리사이즈)로 변환 |
 | 한글 정확도 (육안 표본) | 4장 중 3장 완벽, 1장 한글자 변형 (88%) |
 
 ### 알려진 한계
 
 - **한글 정확도 비결정성**: 같은 프롬프트라도 세션마다 1~2글자 변형 가능 (`통` → `튱` 등). 100% 정확 보장 안 됨 → **생성 후 육안 검수 필수**
+- **출력 크기 보정**: Gemini 응답(예: 928×1152 JPEG)은 중앙 크롭 후 1080×1350 PNG 로 자동 변환. 4:5 와 비율 차이가 커서 5% 넘게 잘리면 경고 출력
 - **가끔 가짜 인스타 핸들/워터마크 추가**: Gemini 가 학습 데이터 영향으로 본 적 없는 핸들(예: `@DevOpsPro`) 을 자체 추가하는 경우 있음 → 발견 시 해당 슬라이드만 재생성
-- **한글 오타 자동 감지 미구현**: 현재 OCR 기반 오타 감지 없음. `carousel-reviewer` 서브에이전트가 LLM 비전으로 점검
+- **한글 오타 자동 감지**: `python scripts/typo-check.py --topic <topic>` — Gemini 비전이 글자를 그대로 전사하고, 프롬프트의 따옴표 안 한글 문구와 일치하는지 스크립트가 판정. 따옴표로 지정하지 않은 문구는 검사 대상이 아님
 
 ### 재생성 팁
 
-오타 1~2장은 아래로 해당 슬라이드만 재생성 (현재는 전체 재실행, 다음 버전에서 `--only N` 추가 예정):
+오타 1~2장은 `--only` 로 해당 슬라이드만 재생성 (나머지 PNG 는 그대로 유지):
 
 ```bash
-# 임시로 slides JSON 의 다른 슬라이드를 비워두고 실행
-python scripts/nanobanana-gen.py --topic claude-code-tips --slides templates/slides.partial.json
+python scripts/nanobanana-gen.py --topic claude-code-tips --only 3,7
 ```
 
 ---

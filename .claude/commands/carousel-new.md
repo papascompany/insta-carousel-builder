@@ -60,18 +60,29 @@ python scripts/nanobanana-gen.py --topic <키워드> --slides templates/slides.<
 
 실행 후:
 - `output/<topic>/slide-01.png ~ slide-09.png` 생성
-- 약 4분 소요, 비용 약 500~1000원
+- 약 4분 소요, 9장당 약 $1.2 (Pro 공식 단가 기준, 유료 등급 필수)
+- `429`/한도 0 오류 = 무료 등급 키 → 재시도 말고 CEO 보고 + HTML 엔진 제안
 - 실패한 슬라이드가 있으면 해당 `n` 만 재실행
 
 ---
 
 ## Phase 4 — 검증
 
-**`carousel-reviewer` 서브에이전트 dispatch**:
+**4-1. 한글 오타 검사 (나노바나나 엔진만)**:
+
+```bash
+python scripts/typo-check.py --topic <topic>
+```
+
+- `FAIL` → 출력된 `--only N` 으로 해당 슬라이드만 재생성 후 typo-check 재실행 (최대 2회, 그래도 FAIL 이면 CEO 보고)
+- `ERROR`(전사 실패) → 재생성하지 말고 typo-check 만 재실행
+- 핸들/워터마크 `WARN` → 해당 슬라이드 재생성
+
+**4-2. `carousel-reviewer` 서브에이전트 dispatch**:
 
 > output/<topic>/ 의 9장 PNG 를 10항목 채점해줘.
 > - 자동 검사: `node scripts/quality-check.js --dir output/<topic>`
-> - 육안 검수: 한글 오타 slide별 확인
+> - 한글 오타: `output/<topic>/typo-report.json` 결과 반영 + 따옴표 밖 문구는 육안 확인
 > - 총점 + 상위 3개 개선 포인트 + 판정 (PASS/HOLD/FAIL)
 > - 직접 수정하지 말고 지적만
 
@@ -92,7 +103,7 @@ python scripts/nanobanana-gen.py --topic <키워드> --slides templates/slides.<
 
 ## 생성 결과
 - 9/9 성공 (또는 N/9 + 실패 사유)
-- 비용: 약 NNN원
+- 비용: 공식 단가 × 생성 장수 (추정치임을 명시)
 - 시간: N분 N초
 - 평균 파일 크기: NNN KB
 

@@ -6,7 +6,8 @@
   "scripts": {
     "quality-check": "node scripts/quality-check.js",
     "generate:nanobanana": "python scripts/nanobanana-gen.py",
-    "generate:html": "node scripts/html-carousel-gen.js"
+    "generate:html": "node scripts/html-carousel-gen.js",
+    "typo-check": "python scripts/typo-check.py"
   },
   "dependencies": {
     "puppeteer": "^23.0.0"

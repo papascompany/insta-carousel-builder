@@ -13,7 +13,7 @@
 - "AI 글쓰기 7가지 꿀팁으로 인스타 카드뉴스 써줘"
 - "챗GPT 프롬프트 주제로 캐러셀 9장 만들자"
 
-수동 호출: `/carousel-research`, `/carousel-prompt`, `/carousel-gen`, `/carousel-quality`
+수동 호출: `/carousel-quality` (단계별 실행은 해당 서브에이전트 / 스크립트를 직접 호출)
 
 ---
 
@@ -30,6 +30,8 @@
 > "🍌 나노바나나(Gemini, 빠른 실험) vs 🎨 HTML(정확/0원) 중 어느 엔진?"
 
 **CEO가 명시 안 하면 기본값**: HTML/Puppeteer (정확도 우선).
+
+나노바나나 실행 시 `429`/한도 0 오류가 나면 재시도하지 말고 CEO 에게 "Gemini API 무료 등급 — 유료 전환 필요 (README 무료 등급 안내)" 로 보고하고 HTML 엔진을 제안.
 
 ### 엔진별 Phase 3 분기
 
@@ -61,7 +63,7 @@ Phase 3b (HTML):
 | # | 기준 | 허용 범위 |
 |:---:|:---|:---|
 | 1 | **해상도** | 1080×1350 (4:5 인스타 권장) |
-| 2 | **한글 렌더링** | 오타 없어야 함 (`duplicate-check.js` 로 체크) |
+| 2 | **한글 렌더링** | 오타 없어야 함 (나노바나나: `scripts/typo-check.py` — Gemini 비전 전사 + 스크립트 판정) |
 | 3 | **디자인 DNA 일관성** | 9장 배경색/폰트/액센트 컬러 통일 |
 | 4 | **Cover 후킹** | 3초 내 스크롤 멈춤 가능한 헤드라인 |
 | 5 | **1장당 정보 밀도** | 한 슬라이드 = 한 포인트 (여러 개 = 혼란) |
@@ -69,7 +71,7 @@ Phase 3b (HTML):
 | 7 | **금칙어** | `knowledge/banned-words.json` 참조 |
 | 8 | **톤** | 친근한 전문가. "안녕하세요 오늘은" 같은 filler 금지 |
 
-→ `scripts/quality-check.js` 가 생성 직후 자동 검사. 한글 오타 감지 시 해당 슬라이드만 재생성.
+→ `scripts/quality-check.js` 가 생성 직후 자동 검사 (구조/개수/해상도·실제 포맷/파일 크기/금칙어 — HTML 트랙은 `--html` 로 금칙어 검사). 오타 발견 시 해당 슬라이드만 `--only N` 으로 재생성.
 
 ---
 
@@ -79,7 +81,7 @@ Phase 3b (HTML):
 1. `knowledge/brand-facts.md` — 수치/브랜드 SSOT (이 파일 외 숫자 금지)
 2. `knowledge/patterns/carousel-structure.md` — 9장 구조 공식
 3. `templates/slides.example.json` — 프롬프트 템플릿
-4. `output/_index.json` — 최근 패턴 → 의도적으로 다른 구조 선택
+4. `output/_index.json` (있다면) — 최근 패턴 → 의도적으로 다른 구조 선택
 
 **상황별 추가 Read**:
 - 주제 리서치: `knowledge/reference/` (있다면)
@@ -97,8 +99,9 @@ Phase 2 [프롬프트 설계] → carousel-prompt-writer 서브에이전트 disp
 Phase 3 [이미지 생성]  → scripts/nanobanana-gen.py 실행
                           Gemini 3.0 Pro Image 로 9장 PNG 생성
 Phase 4 [품질 검증]    → scripts/quality-check.js 자동 실행
+                          → scripts/typo-check.py --topic <topic> (나노바나나만)
+                            FAIL 슬라이드만 --only 로 재생성 → typo-check 재실행
                           → carousel-reviewer 서브에이전트 10항목 정성 채점
-                          오타 감지 시 해당 슬라이드만 재생성
 ```
 
 **서브에이전트 원칙**:
@@ -113,9 +116,12 @@ Phase 4 [품질 검증]    → scripts/quality-check.js 자동 실행
 ```
 output/{topic}/
 ├── slide-01.png ~ slide-09.png   # 1080×1350 PNG 9장
-├── prompts.json                  # 사용된 프롬프트 (재현용)
-├── metadata.json                 # 생성 시간/비용/품질 리포트
+├── prompts.json                  # 사용된 프롬프트 (재현용, 나노바나나 엔진이 자동 기록)
+├── metadata.json                 # 실행 이력: 시간/모델/슬라이드별 결과 (두 엔진 자동 기록, 비용은 미기록)
+├── quality-report.json           # quality-check.js --dir 결과
 └── README.md                     # 주제 요약 + 사용 가이드
+
+output/_index.json                # 주제별 최근 엔진/구조/Cover 훅/역할 목록 (생성기가 자동 갱신)
 ```
 
 **명명 규칙**: `{YYYY-MM-DD}_{주제압축}` (공백 제거, 특수문자 금지)
@@ -126,6 +132,8 @@ output/{topic}/
 
 - 수치는 반드시 `brand-facts.md` 에서만 인용
 - 이미지 생성 결과의 한글 오타 판정은 **스크립트가 수행** (LLM 판단 금지)
+  - `typo-check.py`: Gemini 는 보이는 글자를 고치지 않고 전사만, 프롬프트 따옴표 안 한글 문구와의 일치 판정은 스크립트
+  - 전사 실패(`ERROR`)는 오타가 아님 → 재생성하지 말고 검사만 재실행
 - 스크립트 경고 발생 시 무시하지 말고 재생성
 
 ---
@@ -134,7 +142,8 @@ output/{topic}/
 
 `.env` 파일 (git 추적 금지):
 ```
-GEMINI_API_KEY=AIza...         # 나노바나나 엔진 사용 시만 필수 (https://aistudio.google.com/apikey)
+GEMINI_API_KEY=AIza...         # 나노바나나 엔진 사용 시만 필수 — 유료 등급(Tier 1+) 프로젝트 키여야 함 (이미지 모델은 무료 등급 불가)
+GEMINI_OCR_MODEL=               # (옵션) typo-check 전사 모델, 기본 gemini-2.5-flash
 ANTHROPIC_API_KEY=              # (옵션) reviewer 서브에이전트 API 호출용
 ```
 
@@ -142,7 +151,7 @@ ANTHROPIC_API_KEY=              # (옵션) reviewer 서브에이전트 API 호�
 
 ```bash
 # 나노바나나 엔진
-pip install python-dotenv google-genai
+pip install python-dotenv google-genai pillow
 
 # HTML/Puppeteer 엔진
 npm install   # puppeteer 자동 설치

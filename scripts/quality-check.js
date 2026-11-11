@@ -2,18 +2,79 @@
 /**
  * 인스타 캐러셀 품질 자동 검사.
  *
- * 2 모드:
+ * 3 모드:
  *   1. JSON 검증: --prompt templates/slides.<topic>.json
- *      - 9장 구조, common_style 존재, n 1~9 순차, role/prompt 필수
+ *      - 9장 구조, common_style 존재, n 1~9 순차, role/prompt 필수, 금칙어
  *   2. PNG 검증: --dir output/<topic>
- *      - 9장 PNG 존재, 1080×1350 해상도, 파일 크기 분포
+ *      - 9장 PNG 존재, 해상도(1080×1350 또는 정수배), 실제 포맷, 파일 크기 분포
+ *   3. HTML 검증: --html output/<topic>/slides (폴더 또는 단일 파일)
+ *      - 화면에 보이는 텍스트의 금칙어
+ *
+ * 금칙어: knowledge/banned-words.json (카테고리별 배열, 앞의 "~" 는 무시)
  *
  * 사용법:
  *   node scripts/quality-check.js --prompt templates/slides.claude-code.json
  *   node scripts/quality-check.js --dir output/claude-code-tips
+ *   node scripts/quality-check.js --html output/claude-code-tips/slides
  */
-import { readFileSync, existsSync, readdirSync, statSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { readFileSync, existsSync, readdirSync, statSync, writeFileSync, openSync, readSync, closeSync } from 'node:fs';
+import { join, dirname, basename } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const REPO_ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
+const BANNED_WORDS_PATH = join(REPO_ROOT, 'knowledge', 'banned-words.json');
+const TARGET = { width: 1080, height: 1350 };
+
+/** banned-words.json → [{ category, word }] */
+function loadBannedWords() {
+  if (!existsSync(BANNED_WORDS_PATH)) return [];
+  const data = JSON.parse(readFileSync(BANNED_WORDS_PATH, 'utf-8'));
+  const list = [];
+  for (const [category, words] of Object.entries(data)) {
+    if (!Array.isArray(words)) continue;
+    for (const w of words) {
+      const word = String(w).replace(/^~/, '').trim();
+      if (word) list.push({ category, word });
+    }
+  }
+  return list;
+}
+
+/** text 안의 금칙어 → ["<where>: \"word\" (category)"] */
+function findBannedWords(text, where, banned) {
+  return banned
+    .filter(({ word }) => text.includes(word))
+    .map(({ word, category }) => `${where}: 금칙어 "${word}" (${category})`);
+}
+
+/** PNG/JPEG 헤더에서 포맷과 크기 읽기. 실패 시 null */
+function readImageInfo(path) {
+  const fd = openSync(path, 'r');
+  try {
+    const head = Buffer.alloc(64 * 1024);
+    const n = readSync(fd, head, 0, head.length, 0);
+    const b = head.subarray(0, n);
+    if (n >= 24 && b.readUInt32BE(0) === 0x89504e47 && b.toString('ascii', 12, 16) === 'IHDR') {
+      return { format: 'png', width: b.readUInt32BE(16), height: b.readUInt32BE(20) };
+    }
+    if (n >= 4 && b[0] === 0xff && b[1] === 0xd8) {
+      let i = 2;
+      while (i + 9 < n) {
+        if (b[i] !== 0xff) return null;
+        const marker = b[i + 1];
+        const len = b.readUInt16BE(i + 2);
+        // SOF0~SOF15 (DHT=C4, JPG=C8, DAC=CC 제외)
+        if (marker >= 0xc0 && marker <= 0xcf && ![0xc4, 0xc8, 0xcc].includes(marker)) {
+          return { format: 'jpeg', width: b.readUInt16BE(i + 7), height: b.readUInt16BE(i + 5) };
+        }
+        i += 2 + len;
+      }
+    }
+    return null;
+  } finally {
+    closeSync(fd);
+  }
+}
 
 function parseArgs(argv) {
   const args = {};
@@ -58,6 +119,11 @@ function checkPromptJson(path) {
     if (!s.prompt || s.prompt.length < 50) errors.push(`slides[${i}].prompt 누락 또는 너무 짧음`);
   }
 
+  const banned = loadBannedWords();
+  for (const s of data.slides) {
+    errors.push(...findBannedWords(s.prompt || '', `slide-${String(s.n).padStart(2, '0')}`, banned));
+  }
+
   const coverExists = data.slides.some((s) => /cover/i.test(s.role));
   const outroExists = data.slides.some((s) => /outro|closing/i.test(s.role));
   if (!coverExists) warnings.push('Cover 슬라이드 없음 (권장)');
@@ -99,6 +165,20 @@ function checkPngDir(dir) {
     sizes.push({ file: f, kb: Math.round(st.size / 1024) });
     if (st.size < 50 * 1024) warnings.push(`${f} 너무 작음 (${Math.round(st.size / 1024)}KB, 깨진 이미지 가능)`);
     if (st.size > 3 * 1024 * 1024) warnings.push(`${f} 너무 큼 (${Math.round(st.size / 1024)}KB)`);
+
+    const info = readImageInfo(fp);
+    if (!info) {
+      errors.push(`${f} 이미지 헤더 판독 불가 (PNG/JPEG 아님 또는 손상)`);
+      continue;
+    }
+    sizes[sizes.length - 1].px = `${info.width}×${info.height}`;
+    if (info.format !== 'png') warnings.push(`${f} 실제 포맷이 ${info.format.toUpperCase()} (확장자는 .png)`);
+    const scale = info.width / TARGET.width;
+    if (!(Number.isInteger(scale) && scale >= 1 && info.height === TARGET.height * scale)) {
+      errors.push(
+        `${f} 해상도 ${info.width}×${info.height} (기대: ${TARGET.width}×${TARGET.height} 또는 정수배) — 재생성이 아니라 생성기 해상도 설정 문제`,
+      );
+    }
   }
 
   return {
@@ -108,6 +188,33 @@ function checkPngDir(dir) {
     slide_count: files.length,
     sizes,
   };
+}
+
+function stripHtml(html) {
+  return html
+    .replace(/<(script|style)[^>]*>[\s\S]*?<\/\1>/gi, ' ')
+    .replace(/<!--[\s\S]*?-->/g, ' ')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/\s+/g, ' ');
+}
+
+function checkHtml(target) {
+  if (!existsSync(target)) {
+    return { status: 'FAIL', errors: [`경로 없음: ${target}`] };
+  }
+  const files = statSync(target).isDirectory()
+    ? readdirSync(target).filter((f) => /^slide-\d{2}\.html$/.test(f)).sort().map((f) => join(target, f))
+    : [target];
+  if (files.length === 0) {
+    return { status: 'FAIL', errors: [`slide-*.html 없음: ${target}`] };
+  }
+  const banned = loadBannedWords();
+  const errors = [];
+  for (const fp of files) {
+    errors.push(...findBannedWords(stripHtml(readFileSync(fp, 'utf-8')), basename(fp), banned));
+  }
+  return { status: errors.length > 0 ? 'FAIL' : 'PASS', errors, warnings: [], slide_count: files.length };
 }
 
 function icon(s) {
@@ -127,8 +234,11 @@ function main() {
   } else if (args.dir) {
     console.log(`[모드] PNG 폴더 검증: ${args.dir}`);
     result = checkPngDir(args.dir);
+  } else if (args.html) {
+    console.log(`[모드] HTML 금칙어 검증: ${args.html}`);
+    result = checkHtml(args.html);
   } else {
-    console.error('❌ --prompt <json> 또는 --dir <folder> 중 하나 필수');
+    console.error('❌ --prompt <json>, --dir <folder>, --html <folder|file> 중 하나 필수');
     process.exit(1);
   }
 
@@ -145,10 +255,9 @@ function main() {
   }
   if (result.sizes) {
     console.log('\n📦 파일 크기:');
-    result.sizes.forEach((s) => console.log(`   ${s.file}: ${s.kb} KB`));
+    result.sizes.forEach((s) => console.log(`   ${s.file}: ${s.kb} KB${s.px ? `, ${s.px}` : ''}`));
   }
 
-  const reportDir = args.dir || (args.prompt ? args.prompt.replace(/\.json$/, '') : '.');
   const reportPath = args.dir ? join(args.dir, 'quality-report.json') : null;
   if (reportPath) {
     writeFileSync(reportPath, JSON.stringify({ ...result, checked_at: new Date().toISOString() }, null, 2));

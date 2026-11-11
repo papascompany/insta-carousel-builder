@@ -22,7 +22,7 @@
  *   Linux: https://github.com/orioncactus/pretendard 릴리즈 참조
  */
 import puppeteer from 'puppeteer';
-import { readdirSync, existsSync, mkdirSync } from 'node:fs';
+import { readdirSync, existsSync, mkdirSync, readFileSync, writeFileSync, renameSync } from 'node:fs';
 import { join, resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -45,6 +45,47 @@ const CONFIG = {
   height: 1350,
   deviceScaleFactor: 2,
 };
+
+function readJson(path, fallback) {
+  try {
+    return JSON.parse(readFileSync(path, 'utf-8'));
+  } catch {
+    return fallback;
+  }
+}
+
+function writeJson(path, data) {
+  const tmp = `${path}.tmp`;
+  writeFileSync(tmp, JSON.stringify(data, null, 2) + '\n');
+  renameSync(tmp, path);
+}
+
+/** output/<topic>/metadata.json 에 실행 이력 추가, output/_index.json 에 주제 요약 갱신 */
+function recordRun({ outputDir, topic, run }) {
+  const metaPath = join(outputDir, 'metadata.json');
+  const meta = readJson(metaPath, {});
+  Object.assign(meta, { topic, engine: 'html', updated_at: run.finished_at });
+  meta.runs = [...(meta.runs || []), run];
+  writeJson(metaPath, meta);
+
+  const brief = readJson(join(outputDir, 'brief.json'), {});
+  const roles = Array.isArray(brief.nine_slide_outline)
+    ? brief.nine_slide_outline.filter((s) => s && typeof s === 'object').map((s) => s.role || '')
+    : null;
+  const indexPath = join(dirname(outputDir), '_index.json');
+  const index = readJson(indexPath, { carousels: [] });
+  const entries = (index.carousels || []).filter((e) => e.topic !== topic);
+  entries.push({
+    topic,
+    engine: 'html',
+    updated_at: run.finished_at,
+    structure: brief.recommended_structure ?? null,
+    cover_hook: brief.recommended_cover_hook ?? null,
+    roles,
+  });
+  entries.sort((a, b) => String(b.updated_at || '').localeCompare(String(a.updated_at || '')));
+  writeJson(indexPath, { ...index, carousels: entries });
+}
 
 async function captureSlides({ slidesDir, outputDir, only }) {
   if (!existsSync(outputDir)) mkdirSync(outputDir, { recursive: true });
@@ -102,6 +143,7 @@ async function captureSlides({ slidesDir, outputDir, only }) {
 
   await browser.close();
   console.log(`\n완료! ${outputDir}\n`);
+  return files.map((f) => f.replace('.html', '.png'));
 }
 
 async function main() {
@@ -116,7 +158,21 @@ async function main() {
     process.exit(1);
   }
 
-  await captureSlides({ slidesDir, outputDir, only: args.only });
+  const startedAt = new Date();
+  const captured = await captureSlides({ slidesDir, outputDir, only: args.only });
+  const finishedAt = new Date();
+  recordRun({
+    outputDir,
+    topic,
+    run: {
+      started_at: startedAt.toISOString(),
+      finished_at: finishedAt.toISOString(),
+      duration_sec: Math.round((finishedAt - startedAt) / 100) / 10,
+      viewport: CONFIG,
+      only: args.only ? Number(args.only) : null,
+      slides: captured,
+    },
+  });
 }
 
 main().catch((e) => {
