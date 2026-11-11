@@ -20,8 +20,13 @@
  *   npm install puppeteer
  *
  * 폰트:
- *   Pretendard 시스템 설치 권장 (없으면 CDN으로 폴백되지만 첫 로드 느림)
- *   Linux: https://github.com/orioncactus/pretendard 릴리즈 참조
+ *   HTML 의 Pretendard CDN(@import .../pretendard/dist/web/variable/...) 요청은
+ *   레포의 assets/fonts/pretendard/ (OFL-1.1) 로 대체해 서빙 → 오프라인/CDN 차단 환경에서도 동일 렌더링.
+ *   캡처 전 사용 중인 웹폰트가 실제 로드됐는지 확인하고, 대체 폰트로 떨어지면 중단
+ *   (--allow-fallback-font 로 무시 가능).
+ *
+ * 모바일 가독성:
+ *   1080px 캔버스는 폰(약 390px)에서 0.36배로 축소됨. font-size < MIN_FONT_PX 텍스트는 경고.
  */
 import puppeteer from 'puppeteer';
 import { spawnSync } from 'node:child_process';
@@ -42,6 +47,11 @@ function parseArgs(argv) {
   }
   return args;
 }
+
+const FONT_DIR = join(REPO_ROOT, 'assets', 'fonts', 'pretendard');
+// .../pretendard[@ver]/dist/web/variable/<rest> → assets/fonts/pretendard/<rest>
+const PRETENDARD_URL = /\/pretendard(?:@[^/]+)?\/dist\/web\/variable\/(.+?)(?:[?#].*)?$/;
+const MIN_FONT_PX = 24; // 폰에서 약 8.7px — 이보다 작으면 읽기 어려움
 
 const CONFIG = {
   width: 1080,
@@ -90,7 +100,7 @@ function recordRun({ outputDir, topic, run }) {
   writeJson(indexPath, { ...index, carousels: entries });
 }
 
-async function captureSlides({ slidesDir, outputDir, only }) {
+async function captureSlides({ slidesDir, outputDir, only, allowFallbackFont }) {
   if (!existsSync(outputDir)) mkdirSync(outputDir, { recursive: true });
 
   let files = readdirSync(slidesDir)
@@ -120,6 +130,18 @@ async function captureSlides({ slidesDir, outputDir, only }) {
   });
 
   const page = await browser.newPage();
+  await page.setRequestInterception(true);
+  page.on('request', (req) => {
+    const m = req.url().match(PRETENDARD_URL);
+    const local = m && resolve(FONT_DIR, m[1]);
+    if (local && local.startsWith(FONT_DIR) && existsSync(local)) {
+      const type = local.endsWith('.css') ? 'text/css' : 'font/woff2';
+      req.respond({ status: 200, contentType: type, body: readFileSync(local), headers: { 'Access-Control-Allow-Origin': '*' } });
+    } else {
+      req.continue();
+    }
+  });
+  const warnings = [];
   await page.setViewport({
     width: CONFIG.width,
     height: CONFIG.height,
@@ -136,6 +158,37 @@ async function captureSlides({ slidesDir, outputDir, only }) {
     await page.evaluate(() => document.fonts.ready);
     await new Promise((r) => setTimeout(r, 500));
 
+    const audit = await page.evaluate((minPx) => {
+      const declared = new Map(); // family → loaded 여부
+      for (const f of document.fonts) {
+        const fam = f.family.replace(/^["']|["']$/g, '');
+        declared.set(fam, declared.get(fam) || f.status === 'loaded');
+      }
+      const failedFonts = new Set();
+      const small = [];
+      for (const el of document.body.querySelectorAll('*')) {
+        const text = [...el.childNodes].filter((n) => n.nodeType === 3).map((n) => n.textContent.trim()).join('');
+        if (!text) continue;
+        const cs = getComputedStyle(el);
+        if (cs.display === 'none' || cs.visibility === 'hidden') continue;
+        const first = cs.fontFamily.split(',')[0].trim().replace(/^["']|["']$/g, '');
+        if (declared.has(first) && !declared.get(first)) failedFonts.add(first);
+        const px = parseFloat(cs.fontSize);
+        if (px < minPx) small.push(`${px}px "${text.slice(0, 20)}"`);
+      }
+      return { failedFonts: [...failedFonts], small };
+    }, MIN_FONT_PX);
+
+    if (audit.failedFonts.length > 0 && !allowFallbackFont) {
+      await browser.close();
+      console.error(`❌ ${file}: 웹폰트 로드 실패 → 대체 폰트로 렌더링됨: ${audit.failedFonts.join(', ')}`);
+      console.error('   assets/fonts/ 에 해당 폰트를 두거나 네트워크를 확인하세요. 무시하려면 --allow-fallback-font');
+      process.exit(1);
+    }
+    if (audit.small.length > 0) {
+      warnings.push(`${file}: ${MIN_FONT_PX}px 미만 텍스트 ${audit.small.length}개 (모바일 판독 어려움) — ${audit.small.slice(0, 3).join(', ')}`);
+    }
+
     await page.screenshot({
       path: outPath,
       type: 'png',
@@ -147,6 +200,11 @@ async function captureSlides({ slidesDir, outputDir, only }) {
 
   await browser.close();
   console.log(`\n완료! ${outputDir}\n`);
+  if (warnings.length > 0) {
+    console.log('⚠️  모바일 가독성 경고:');
+    warnings.forEach((w) => console.log(`   - ${w}`));
+    console.log('');
+  }
   return files.map((f) => f.replace('.html', '.png'));
 }
 
@@ -170,8 +228,10 @@ function runQualityCheck(outputDir) {
 }
 
 async function main() {
+  const FLAGS = ['--skip-check', '--allow-fallback-font'];
   const skipCheck = process.argv.includes('--skip-check');
-  const args = parseArgs(process.argv.filter((a) => a !== '--skip-check'));
+  const allowFallbackFont = process.argv.includes('--allow-fallback-font');
+  const args = parseArgs(process.argv.filter((a) => !FLAGS.includes(a)));
   const only = parseOnly(args.only);
   const topic = args.topic || 'default';
   const slidesDir = args['slides-dir'] || join(REPO_ROOT, 'output', topic, 'slides');
@@ -184,7 +244,7 @@ async function main() {
   }
 
   const startedAt = new Date();
-  const captured = await captureSlides({ slidesDir, outputDir, only });
+  const captured = await captureSlides({ slidesDir, outputDir, only, allowFallbackFont });
   const finishedAt = new Date();
   recordRun({
     outputDir,
