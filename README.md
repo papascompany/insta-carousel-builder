@@ -117,7 +117,8 @@ insta-carousel-builder/
 │   ├── html-carousel-gen.js   # HTML → PNG 캡처 (Puppeteer)
 │   ├── quality-check.js       # 구조/해상도/파일 검사 (Node.js)
 │   ├── typo-check.py          # 한글 오타 검사 (Gemini 비전 전사 + 스크립트 판정)
-│   └── hook-post-write.js     # PostToolUse 훅 → quality-check 자동 실행
+│   └── hook-post-write.js     # PostToolUse 훅 → Claude 가 직접 쓴 JSON/HTML 저장 시 quality-check
+├── tests/                      # node --test + unittest (Gemini 호출 없음)
 ├── output/                     # 생성 결과 (gitignored)
 └── docs/                       # 샘플 결과물 (sample-output / sample-html)
 ```
@@ -153,6 +154,18 @@ insta-carousel-builder/
 ```bash
 python scripts/nanobanana-gen.py --topic claude-code-tips --only 3,7
 ```
+
+---
+
+## 개발 / 테스트
+
+```bash
+npm test   # quality-check·훅 (Node) + 이미지 정규화·오타 판정·생성기 CLI (Python, pillow 필요)
+```
+
+- 테스트는 Gemini / Puppeteer 를 호출하지 않습니다 (가짜 클라이언트). GitHub Actions 가 PR 마다 실행합니다.
+- 두 생성기는 끝날 때 `quality-check.js --dir` 를 자동 실행합니다 (`--skip-check` 로 생략). 생성 실패나 검사 FAIL 이면 exit 1.
+- `--only` 는 두 생성기 모두 `3,7` 처럼 쉼표 구분.
 
 ---
 

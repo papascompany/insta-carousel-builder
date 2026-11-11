@@ -98,7 +98,7 @@ Phase 2 [프롬프트 설계] → carousel-prompt-writer 서브에이전트 disp
                           9장 프롬프트 JSON 작성 (templates/slides.{topic}.json)
 Phase 3 [이미지 생성]  → scripts/nanobanana-gen.py 실행
                           Gemini 3.0 Pro Image 로 9장 PNG 생성
-Phase 4 [품질 검증]    → scripts/quality-check.js 자동 실행
+Phase 4 [품질 검증]    → scripts/quality-check.js (두 생성기가 끝날 때 자동 실행, 생성 실패·FAIL 시 exit 1)
                           → scripts/typo-check.py --topic <topic> (나노바나나만)
                             FAIL 슬라이드만 --only 로 재생성 → typo-check 재실행
                           → carousel-reviewer 서브에이전트 10항목 정성 채점

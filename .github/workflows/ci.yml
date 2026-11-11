@@ -1,0 +1,35 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      # 테스트는 Gemini/Puppeteer 를 호출하지 않으므로 pillow 만 설치
+      - name: Install Python test deps
+        run: pip install pillow
+
+      - name: Syntax check
+        run: |
+          for f in scripts/*.js; do node --check "$f"; done
+          python -m py_compile scripts/*.py
+
+      - name: Tests
+        run: npm test

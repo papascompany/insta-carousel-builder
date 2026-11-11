@@ -12,7 +12,9 @@
  *   node scripts/html-carousel-gen.js --topic my-topic
  *
  *   # 단일 슬라이드만 캡처:
- *   node scripts/html-carousel-gen.js --topic my-topic --only 3
+ *   node scripts/html-carousel-gen.js --topic my-topic --only 3,7
+ *
+ *   # 캡처 후 quality-check.js --dir 이 자동 실행됨 (생략: --skip-check)
  *
  * 의존성:
  *   npm install puppeteer
@@ -22,6 +24,7 @@
  *   Linux: https://github.com/orioncactus/pretendard 릴리즈 참조
  */
 import puppeteer from 'puppeteer';
+import { spawnSync } from 'node:child_process';
 import { readdirSync, existsSync, mkdirSync, readFileSync, writeFileSync, renameSync } from 'node:fs';
 import { join, resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -95,12 +98,13 @@ async function captureSlides({ slidesDir, outputDir, only }) {
     .sort();
 
   if (only) {
-    const target = `slide-${String(only).padStart(2, '0')}.html`;
-    files = files.filter((f) => f === target);
-    if (files.length === 0) {
-      console.error(`❌ ${target} 없음 in ${slidesDir}`);
+    const targets = only.map((n) => `slide-${String(n).padStart(2, '0')}.html`);
+    const missing = targets.filter((t) => !files.includes(t));
+    if (missing.length > 0) {
+      console.error(`❌ ${missing.join(', ')} 없음 in ${slidesDir}`);
       process.exit(1);
     }
+    files = files.filter((f) => targets.includes(f));
   }
 
   if (files.length === 0) {
@@ -146,8 +150,29 @@ async function captureSlides({ slidesDir, outputDir, only }) {
   return files.map((f) => f.replace('.html', '.png'));
 }
 
+/** "3,7" → [3, 7]. 숫자가 아니면 종료 */
+function parseOnly(value) {
+  if (!value) return null;
+  const nums = String(value).split(',').map((x) => x.trim()).filter(Boolean).map(Number);
+  if (nums.length === 0 || nums.some((n) => !Number.isInteger(n) || n < 1)) {
+    console.error(`❌ --only 는 쉼표로 구분한 숫자여야 합니다: ${value}`);
+    process.exit(1);
+  }
+  return [...new Set(nums)].sort((a, b) => a - b);
+}
+
+/** 캡처 직후 품질 검사 (Bash 로 실행된 스크립트 산출물은 PostToolUse 훅이 안 걸리므로) */
+function runQualityCheck(outputDir) {
+  const r = spawnSync(process.execPath, [join(__dirname, 'quality-check.js'), '--dir', outputDir], {
+    stdio: 'inherit',
+  });
+  return r.status;
+}
+
 async function main() {
-  const args = parseArgs(process.argv);
+  const skipCheck = process.argv.includes('--skip-check');
+  const args = parseArgs(process.argv.filter((a) => a !== '--skip-check'));
+  const only = parseOnly(args.only);
   const topic = args.topic || 'default';
   const slidesDir = args['slides-dir'] || join(REPO_ROOT, 'output', topic, 'slides');
   const outputDir = join(REPO_ROOT, 'output', topic);
@@ -159,7 +184,7 @@ async function main() {
   }
 
   const startedAt = new Date();
-  const captured = await captureSlides({ slidesDir, outputDir, only: args.only });
+  const captured = await captureSlides({ slidesDir, outputDir, only });
   const finishedAt = new Date();
   recordRun({
     outputDir,
@@ -169,10 +194,12 @@ async function main() {
       finished_at: finishedAt.toISOString(),
       duration_sec: Math.round((finishedAt - startedAt) / 100) / 10,
       viewport: CONFIG,
-      only: args.only ? Number(args.only) : null,
+      only,
       slides: captured,
     },
   });
+
+  if (!skipCheck && runQualityCheck(outputDir) === 1) process.exit(1);
 }
 
 main().catch((e) => {

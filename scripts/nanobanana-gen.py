@@ -25,6 +25,8 @@ import base64
 import io
 import json
 import os
+import shutil
+import subprocess
 import sys
 import time
 from datetime import datetime, timezone
@@ -109,6 +111,20 @@ def write_json(path: Path, data) -> None:
     tmp.replace(path)
 
 
+def run_quality_check(out_dir: Path) -> int | None:
+    """생성 직후 quality-check.js --dir 실행 (Bash 로 실행된 스크립트 산출물은 훅이 안 걸리므로).
+
+    반환: quality-check 종료 코드, node 가 없으면 None.
+    """
+    node = shutil.which("node")
+    if not node:
+        print("\n[WARN] node 없음 — quality-check 생략. 직접 실행: node scripts/quality-check.js --dir", out_dir)
+        return None
+    sys.stdout.flush()  # 파이프로 실행될 때 node 출력이 앞질러 찍히지 않게
+    r = subprocess.run([node, str(REPO_ROOT / "scripts" / "quality-check.js"), "--dir", str(out_dir)])
+    return r.returncode
+
+
 def record_run(out_dir: Path, topic: str, engine: str, run: dict, roles: list[str]) -> None:
     """output/<topic>/metadata.json 에 실행 이력 추가, output/_index.json 에 주제 요약 갱신."""
     meta_path = out_dir / "metadata.json"
@@ -140,6 +156,7 @@ def main():
     ap.add_argument("--slides", default=str(DEFAULT_SLIDES_JSON), help="slides.json 경로")
     ap.add_argument("--model", default="gemini-3-pro-image-preview", help="Gemini 이미지 모델 ID")
     ap.add_argument("--dry-run", action="store_true", help="API 호출 없이 프롬프트만 출력")
+    ap.add_argument("--skip-check", action="store_true", help="생성 후 quality-check 자동 실행 생략")
     ap.add_argument("--only", default="", help="재생성할 슬라이드 번호 (예: 3 또는 3,7). 나머지 PNG 는 유지")
     args = ap.parse_args()
 
@@ -251,6 +268,13 @@ def main():
     for n, status, dt, info, _ in summary:
         print(f"  slide-{n:02d}  {status:12}  {dt:>7}  {info}")
     print(f"\nOutput: {out_dir}")
+
+    failed = [n for n, status, *_ in summary if status != "OK"]
+    check = None if args.skip_check else run_quality_check(out_dir)
+    if failed:
+        print(f"[FAIL] 생성 실패 슬라이드 {failed} → --only {','.join(map(str, failed))} 로 재시도")
+    if failed or check == 1:
+        sys.exit(1)
 
 
 if __name__ == "__main__":
