@@ -15,7 +15,8 @@ insta-carousel-builder — 나노바나나 Pro(Gemini 3.0 Pro Image) 인스타 �
 참고:
     - 모델: gemini-3-pro-image-preview (별칭 nano-banana-pro-preview)
     - 한글 정확도 실측: 97.8% (에이나우 2026-04-15 9장 테스트 기준)
-    - 1장당 약 25초 / 9장 약 4분 / 비용 약 500~1000원
+    - 1장당 약 25초 / 9장 약 4분
+    - 비용: 9장당 약 $1.2 (Pro 공식 단가, 2026-11) — Gemini API 유료 등급 필수 (이미지 모델 무료 등급 불가)
 """
 from __future__ import annotations
 
@@ -185,6 +186,7 @@ def main():
     client = genai.Client(api_key=api_key)
     summary = []
     started_at = now_iso()
+    quota_hint_shown = False
     t_run = time.time()
 
     for slide in slides:
@@ -218,6 +220,11 @@ def main():
         except Exception as e:
             dt = time.time() - t0
             print(f"ERR ({dt:.1f}s): {e}")
+            if ("429" in str(e) or "RESOURCE_EXHAUSTED" in str(e)) and not quota_hint_shown:
+                quota_hint_shown = True
+                print("  [HINT] 429 = 한도 초과. 모든 슬라이드가 429 면 무료 등급 키일 가능성이 큼")
+                print("         (이미지 모델은 무료 등급 한도 0). Tier 1 프로젝트 키인지 확인 — README '무료 등급 안내'.")
+                print("         결제 없이 진행하려면 HTML 엔진(html-carousel-gen.js)을 사용하세요.")
             summary.append((n, "ERR", f"{dt:.1f}s", str(e)[:60], None))
 
     # 재현용 프롬프트 (--only 실행이어도 전체 slides JSON 기준)

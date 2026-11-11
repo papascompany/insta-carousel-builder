@@ -60,7 +60,8 @@ python scripts/nanobanana-gen.py --topic <키워드> --slides templates/slides.<
 
 실행 후:
 - `output/<topic>/slide-01.png ~ slide-09.png` 생성
-- 약 4분 소요, 비용 약 500~1000원
+- 약 4분 소요, 9장당 약 $1.2 (Pro 공식 단가 기준, 유료 등급 필수)
+- `429`/한도 0 오류 = 무료 등급 키 → 재시도 말고 CEO 보고 + HTML 엔진 제안
 - 실패한 슬라이드가 있으면 해당 `n` 만 재실행
 
 ---
@@ -102,7 +103,7 @@ python scripts/typo-check.py --topic <topic>
 
 ## 생성 결과
 - 9/9 성공 (또는 N/9 + 실패 사유)
-- 비용: 약 NNN원
+- 비용: 공식 단가 × 생성 장수 (추정치임을 명시)
 - 시간: N분 N초
 - 평균 파일 크기: NNN KB
 

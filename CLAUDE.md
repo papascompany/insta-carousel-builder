@@ -31,6 +31,8 @@
 
 **CEO가 명시 안 하면 기본값**: HTML/Puppeteer (정확도 우선).
 
+나노바나나 실행 시 `429`/한도 0 오류가 나면 재시도하지 말고 CEO 에게 "Gemini API 무료 등급 — 유료 전환 필요 (README 무료 등급 안내)" 로 보고하고 HTML 엔진을 제안.
+
 ### 엔진별 Phase 3 분기
 
 ```
@@ -140,7 +142,7 @@ output/_index.json                # 주제별 최근 엔진/구조/Cover 훅/역
 
 `.env` 파일 (git 추적 금지):
 ```
-GEMINI_API_KEY=AIza...         # 나노바나나 엔진 사용 시만 필수 (https://aistudio.google.com/apikey)
+GEMINI_API_KEY=AIza...         # 나노바나나 엔진 사용 시만 필수 — 유료 등급(Tier 1+) 프로젝트 키여야 함 (이미지 모델은 무료 등급 불가)
 GEMINI_OCR_MODEL=               # (옵션) typo-check 전사 모델, 기본 gemini-2.5-flash
 ANTHROPIC_API_KEY=              # (옵션) reviewer 서브에이전트 API 호출용
 ```
