@@ -5,7 +5,7 @@
 
 AI 이미지 도구로 인스타 캐러셀을 만들면 한글이 깨지고 AI 티가 나서 결국 수작업/외주로 돌아간다 — 는 통념을, **두 엔진 골라 쓰기**로 깨는 레포입니다.
 
-**👀 실제 결과물 → [`docs/sample-output/`](./docs/sample-output/) (나노바나나) / [`docs/sample-html/`](./docs/sample-html/) (HTML)**
+**👀 실제 결과물 → [`docs/sample-output/`](./docs/sample-output/) (나노바나나) / [`docs/sample-html/`](./docs/sample-html/) (HTML) / [`docs/sample-aiwriting/`](./docs/sample-aiwriting/) (HTML 풀 파이프라인: 브리프 → HTML → PNG → README)**
 
 ## 듀얼 엔진 비교
 
@@ -122,7 +122,7 @@ insta-carousel-builder/
 ├── assets/fonts/pretendard/    # Pretendard Variable (SIL OFL 1.1) — HTML 캡처 시 CDN 대신 로컬 서빙
 ├── tests/                      # node --test + unittest (Gemini 호출 없음)
 ├── output/                     # 생성 결과 (gitignored)
-└── docs/                       # 샘플 결과물 (sample-output / sample-html)
+└── docs/                       # 샘플 결과물 (sample-output / sample-html / sample-aiwriting)
 ```
 
 ---
@@ -156,6 +156,20 @@ insta-carousel-builder/
 ```bash
 python scripts/nanobanana-gen.py --topic claude-code-tips --only 3,7
 ```
+
+### HTML 엔진 샘플 (2026-11-12)
+
+`docs/sample-aiwriting/` 는 HTML 엔진으로 한 주제를 끝까지 돌린 결과 폴더입니다. 주제: **"AI 글쓰기 7가지 꿀팁"** (Before/After 구조).
+
+| 파일 | 내용 |
+|:---|:---|
+| `brief.json` | carousel-researcher 브리프 (`quality-check.js --brief` PASS) |
+| `slides/slide-01~09.html` | carousel-html-writer 가 쓴 HTML 9장 |
+| `slide-01~09.png` | Puppeteer 캡처 2160×2700 (1080×1350 의 2배), 74~122 KB |
+| `metadata.json` / `quality-report.json` | 실행 기록과 검사 결과 (PASS, 24px 미만 텍스트 경고 0건) |
+| `README.md` | `scripts/write-readme.js` 가 위 기록으로 작성한 요약 |
+
+다시 캡처하려면 `brief.json` 과 `slides/` 를 `output/<topic>/` 에 복사한 뒤 `node scripts/html-carousel-gen.js --topic <topic>`.
 
 ---
 

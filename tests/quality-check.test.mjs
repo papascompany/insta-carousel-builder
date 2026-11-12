@@ -89,6 +89,14 @@ test('--html: 샘플 HTML 9장은 PASS', () => {
   assert.equal(r.status, 0, r.stdout);
 });
 
+test('두 번째 샘플(docs/sample-aiwriting): 브리프와 HTML 9장 모두 PASS', () => {
+  const sample = join(REPO_ROOT, 'docs', 'sample-aiwriting');
+  const brief = run(QUALITY_CHECK, ['--brief', join(sample, 'brief.json')]);
+  assert.equal(brief.status, 0, brief.stdout);
+  const html = run(QUALITY_CHECK, ['--html', join(sample, 'slides')]);
+  assert.equal(html.status, 0, html.stdout);
+});
+
 function validBrief() {
   const body = Array.from({ length: 7 }, (_, i) => ({ n: i + 2, role: `TIP 0${i + 1}`, core_message: `포인트 ${i + 1}` }));
   return {

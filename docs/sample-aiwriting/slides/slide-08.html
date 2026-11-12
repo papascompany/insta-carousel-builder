@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<style>
+  @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/variable/pretendardvariable.css');
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{width:1080px;height:1350px;background:#131316;font-family:'Pretendard Variable',sans-serif;color:#fff;overflow:hidden;position:relative;word-break:keep-all}
+  .wrap{position:absolute;top:88px;bottom:88px;left:80px;right:80px;display:flex;flex-direction:column}
+  .label{font-size:24px;font-weight:600;letter-spacing:0.13em;color:#CF5C3F;margin-bottom:36px}
+  .head{font-size:54px;font-weight:800;line-height:1.28;letter-spacing:-0.02em}
+  .acc{color:#CF5C3F}
+  .mid{flex:1 1 auto;display:flex;flex-direction:column;justify-content:center;padding:44px 0}
+  .card{border-radius:18px;padding:36px 44px}
+  .before{border:2px dashed rgba(255,255,255,0.3);background:rgba(255,255,255,0.03)}
+  .after{background:rgba(207,92,63,0.1);border:2px solid #CF5C3F}
+  .tag{font-size:24px;font-weight:700;letter-spacing:0.16em;margin-bottom:16px}
+  .before .tag{color:rgba(255,255,255,0.65)}
+  .after .tag{color:#CF5C3F}
+  .before .txt{font-size:38px;line-height:1.5;color:rgba(255,255,255,0.7);text-decoration:line-through;text-decoration-thickness:3px;text-decoration-color:rgba(255,255,255,0.55)}
+  .after .txt{font-size:38px;line-height:1.5;color:#fff;font-weight:600}
+  .doc{margin-top:28px;display:flex;flex-direction:column;gap:14px}
+  .rowlabel{display:flex;align-items:center;gap:18px;font-size:24px;font-weight:700;letter-spacing:0.08em}
+  .rowlabel span{flex:0 0 64px}
+  .bar{height:16px;border-radius:8px}
+  .me{color:#CF5C3F}
+  .me .bar{background:#CF5C3F}
+  .ai{color:rgba(255,255,255,0.65)}
+  .ai .bar{flex:1 1 auto;background:rgba(255,255,255,0.22)}
+  .arrow{align-self:center;width:0;height:0;margin:24px 0;border-left:18px solid transparent;border-right:18px solid transparent;border-top:22px solid #CF5C3F}
+  .caption{font-size:32px;line-height:1.45;color:rgba(255,255,255,0.65)}
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="label">BEFORE/AFTER 07</div>
+    <div class="head">첫 문장과 마무리 한 줄은<br/><span class="acc">내가</span> 쓴다</div>
+
+    <div class="mid">
+      <div class="card before">
+        <div class="tag">BEFORE</div>
+        <div class="txt">"처음부터 끝까지 다 써줘"</div>
+      </div>
+      <div class="arrow"></div>
+      <div class="card after">
+        <div class="tag">AFTER</div>
+        <div class="txt">"첫 문장과 마무리는 내가 쓸게.<br/>그 사이만 채워줘."</div>
+        <div class="doc">
+          <div class="rowlabel me"><span>ME</span><div class="bar" style="flex:0 0 60%"></div></div>
+          <div class="rowlabel ai"><span>AI</span><div class="bar"></div></div>
+          <div class="rowlabel ai"><span>AI</span><div class="bar"></div></div>
+          <div class="rowlabel me"><span>ME</span><div class="bar" style="flex:0 0 45%"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="caption">내 경험이 담긴 그 한 줄이, 글을 사람의 글로 만든다.</div>
+  </div>
+</body>
+</html>

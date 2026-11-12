@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
-import { WRITE_README, tempDir, run } from './helpers.mjs';
+import { REPO_ROOT, WRITE_README, tempDir, run } from './helpers.mjs';
 
 const BRIEF = {
   topic: '테스트 주제 | 파이프 포함',
@@ -152,4 +152,20 @@ test('기록이 없는 항목은 "기록 없음", 폴더나 기록이 아예 없
   assert.equal(existsSync(join(empty, 'README.md')), false);
   assert.equal(run(WRITE_README, ['--dir', join(empty, 'none')]).status, 1);
   assert.equal(run(WRITE_README, []).status, 1);
+});
+
+test('폴더 표기: 레포 안은 레포 기준 경로, 밖은 폴더명만 (output/ 을 지어내지 않음)', () => {
+  const sample = join(REPO_ROOT, 'docs', 'sample-aiwriting');
+  const before = readFileSync(join(sample, 'README.md'), 'utf-8');
+  const r = run(WRITE_README, ['--dir', sample]);
+  assert.equal(r.status, 0, r.stderr);
+  // 커밋된 샘플 README 는 스크립트를 다시 돌려도 그대로여야 함 (결정적)
+  assert.equal(readFileSync(join(sample, 'README.md'), 'utf-8'), before);
+  assert.match(before, /- 폴더: `docs\/sample-aiwriting\/`/);
+
+  const outside = join(tempDir(), 'demo');
+  mkdirSync(outside);
+  writeFileSync(join(outside, 'brief.json'), JSON.stringify(BRIEF));
+  assert.equal(run(WRITE_README, ['--dir', outside]).status, 0);
+  assert.match(readFileSync(join(outside, 'README.md'), 'utf-8'), /- 폴더: `demo\/`/);
 });
