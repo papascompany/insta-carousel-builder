@@ -15,6 +15,7 @@
  *   node scripts/html-carousel-gen.js --topic my-topic --only 3,7
  *
  *   # 캡처 후 quality-check.js --dir 이 자동 실행됨 (생략: --skip-check)
+ *   # 이어서 write-readme.js 가 output/{topic}/README.md 를 작성
  *
  * 의존성:
  *   npm install puppeteer
@@ -205,7 +206,7 @@ async function captureSlides({ slidesDir, outputDir, only, allowFallbackFont }) 
     warnings.forEach((w) => console.log(`   - ${w}`));
     console.log('');
   }
-  return files.map((f) => f.replace('.html', '.png'));
+  return { captured: files.map((f) => f.replace('.html', '.png')), warnings };
 }
 
 /** "3,7" → [3, 7]. 숫자가 아니면 종료 */
@@ -227,6 +228,14 @@ function runQualityCheck(outputDir) {
   return r.status;
 }
 
+/** 결과 폴더 README 작성. 실패해도 생성 결과(종료 코드)에는 영향 없음 */
+function runWriteReadme(outputDir) {
+  const r = spawnSync(process.execPath, [join(__dirname, 'write-readme.js'), '--dir', outputDir], {
+    stdio: 'inherit',
+  });
+  if (r.status !== 0) console.log('⚠️  README 작성 실패 — 직접 실행: node scripts/write-readme.js --dir', outputDir);
+}
+
 async function main() {
   const FLAGS = ['--skip-check', '--allow-fallback-font'];
   const skipCheck = process.argv.includes('--skip-check');
@@ -244,7 +253,7 @@ async function main() {
   }
 
   const startedAt = new Date();
-  const captured = await captureSlides({ slidesDir, outputDir, only, allowFallbackFont });
+  const { captured, warnings } = await captureSlides({ slidesDir, outputDir, only, allowFallbackFont });
   const finishedAt = new Date();
   recordRun({
     outputDir,
@@ -256,10 +265,15 @@ async function main() {
       viewport: CONFIG,
       only,
       slides: captured,
+      // reviewer 가 모바일 가독성·웹폰트 적용을 판단하는 근거
+      allow_fallback_font: allowFallbackFont,
+      small_text_warnings: warnings,
     },
   });
 
-  if (!skipCheck && runQualityCheck(outputDir) === 1) process.exit(1);
+  const checkStatus = skipCheck ? 0 : runQualityCheck(outputDir);
+  runWriteReadme(outputDir); // quality-report.json 을 읽으므로 검사 뒤에 실행
+  if (checkStatus === 1) process.exit(1);
 }
 
 main().catch((e) => {

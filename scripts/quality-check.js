@@ -2,13 +2,17 @@
 /**
  * 인스타 캐러셀 품질 자동 검사.
  *
- * 3 모드:
+ * 4 모드:
  *   1. JSON 검증: --prompt templates/slides.<topic>.json
  *      - 9장 구조, common_style 존재, n 1~9 순차, role/prompt 필수, 금칙어
  *   2. PNG 검증: --dir output/<topic>
  *      - 9장 PNG 존재, 해상도(1080×1350 또는 정수배), 실제 포맷, 파일 크기 분포
  *   3. HTML 검증: --html output/<topic>/slides (폴더 또는 단일 파일)
  *      - 화면에 보이는 텍스트의 금칙어
+ *   4. 브리프 검증: --brief output/<topic>/brief.json
+ *      - nine_slide_outline 정확히 9장, n 1~9 순차, role 필수, 첫 장 Cover / 마지막 장 Outro
+ *      - cta_suggestion 의 행동이 저장/공유/팔로우 중 하나만
+ *      - 금칙어 (saturated_patterns 는 피할 표현을 나열하는 필드라 제외)
  *
  * 금칙어: knowledge/banned-words.json (카테고리별 배열, 앞의 "~" 는 무시)
  *
@@ -16,6 +20,7 @@
  *   node scripts/quality-check.js --prompt templates/slides.claude-code.json
  *   node scripts/quality-check.js --dir output/claude-code-tips
  *   node scripts/quality-check.js --html output/claude-code-tips/slides
+ *   node scripts/quality-check.js --brief output/claude-code-tips/brief.json
  */
 import { readFileSync, existsSync, readdirSync, statSync, writeFileSync, openSync, readSync, closeSync } from 'node:fs';
 import { join, dirname, basename } from 'node:path';
@@ -217,6 +222,90 @@ function checkHtml(target) {
   return { status: errors.length > 0 ? 'FAIL' : 'PASS', errors, warnings: [], slide_count: files.length };
 }
 
+const CTA_ACTIONS = [
+  { name: '저장', pattern: /저장|save/i },
+  { name: '공유', pattern: /공유|share/i },
+  { name: '팔로우', pattern: /팔로우|팔로잉|follow/i },
+];
+// 금칙어를 일부러 나열하는 필드 — 금칙어 검사 제외
+const BRIEF_BANNED_SKIP = new Set(['saturated_patterns']);
+
+/** 값 안의 모든 문자열 → [{ where, text }] (최상위 skip 필드 제외) */
+function collectStrings(value, where, out = []) {
+  if (typeof value === 'string') out.push({ where, text: value });
+  else if (Array.isArray(value)) value.forEach((v, i) => collectStrings(v, `${where}[${i}]`, out));
+  else if (value && typeof value === 'object') {
+    for (const [k, v] of Object.entries(value)) collectStrings(v, where ? `${where}.${k}` : k, out);
+  }
+  return out;
+}
+
+function checkBrief(path) {
+  if (!existsSync(path)) {
+    return { status: 'FAIL', errors: [`파일 없음: ${path}`] };
+  }
+  let data;
+  try {
+    data = JSON.parse(readFileSync(path, 'utf-8'));
+  } catch (e) {
+    return { status: 'FAIL', errors: [`JSON 파싱 실패: ${e.message}`] };
+  }
+  if (!data || typeof data !== 'object' || Array.isArray(data)) {
+    return { status: 'FAIL', errors: ['brief 가 JSON 객체가 아님'] };
+  }
+
+  const errors = [];
+  const warnings = [];
+
+  const outline = data.nine_slide_outline;
+  if (!Array.isArray(outline)) {
+    errors.push('nine_slide_outline 배열 누락');
+  } else {
+    if (outline.length !== 9) errors.push(`nine_slide_outline ${outline.length}장 (기대: 정확히 9장)`);
+    outline.forEach((s, i) => {
+      const at = `nine_slide_outline[${i}]`;
+      if (!s || typeof s !== 'object' || Array.isArray(s)) {
+        errors.push(`${at} 가 객체가 아님 (n / role / core_message 필요)`);
+        return;
+      }
+      if (s.n !== i + 1) errors.push(`${at}.n 이 ${s.n} (기대: ${i + 1})`);
+      if (typeof s.role !== 'string' || !s.role.trim()) errors.push(`${at}.role 누락`);
+      if (typeof s.core_message !== 'string' || !s.core_message.trim()) warnings.push(`${at}.core_message 누락`);
+    });
+    const roleOf = (s) => (s && typeof s === 'object' && typeof s.role === 'string' ? s.role : '');
+    if (outline.length > 0) {
+      const first = roleOf(outline[0]);
+      const last = roleOf(outline[outline.length - 1]);
+      if (!/cover|커버/i.test(first)) errors.push(`첫 장 role 이 Cover 가 아님: "${first}"`);
+      if (!/outro|closing|아웃트로/i.test(last)) errors.push(`마지막 장 role 이 Outro 계열이 아님: "${last}"`);
+    }
+  }
+
+  const cta = data.cta_suggestion;
+  if (typeof cta !== 'string' || !cta.trim()) {
+    errors.push('cta_suggestion 누락');
+  } else {
+    const actions = CTA_ACTIONS.filter(({ pattern }) => pattern.test(cta)).map(({ name }) => name);
+    if (actions.length === 0) errors.push('cta_suggestion 에 행동 없음 (저장/공유/팔로우 중 1개 필요)');
+    if (actions.length > 1) errors.push(`cta_suggestion 에 행동 ${actions.length}개 (${actions.join(', ')}) — 1개만 허용`);
+  }
+
+  const banned = loadBannedWords();
+  for (const [key, value] of Object.entries(data)) {
+    if (BRIEF_BANNED_SKIP.has(key)) continue;
+    for (const { where, text } of collectStrings(value, key)) {
+      errors.push(...findBannedWords(text, where, banned));
+    }
+  }
+
+  return {
+    status: errors.length > 0 ? 'FAIL' : warnings.length > 0 ? 'WARN' : 'PASS',
+    errors,
+    warnings,
+    slide_count: Array.isArray(outline) ? outline.length : 0,
+  };
+}
+
 function icon(s) {
   return s === 'PASS' ? '✅' : s === 'WARN' ? '⚠️ ' : '❌';
 }
@@ -237,8 +326,11 @@ function main() {
   } else if (args.html) {
     console.log(`[모드] HTML 금칙어 검증: ${args.html}`);
     result = checkHtml(args.html);
+  } else if (args.brief) {
+    console.log(`[모드] 브리프 검증: ${args.brief}`);
+    result = checkBrief(args.brief);
   } else {
-    console.error('❌ --prompt <json>, --dir <folder>, --html <folder|file> 중 하나 필수');
+    console.error('❌ --prompt <json>, --dir <folder>, --html <folder|file>, --brief <json> 중 하나 필수');
     process.exit(1);
   }
 

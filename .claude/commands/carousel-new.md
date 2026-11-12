@@ -31,6 +31,15 @@ argument-hint: <주제/키워드>
 > - Cover 후킹 각도 + Outro CTA
 > - 결과를 `output/<폴더>/brief.json` 에 저장
 
+**Phase 1 검사 (다음 단계로 넘어가기 전 필수)**:
+
+```bash
+node scripts/quality-check.js --brief output/<폴더>/brief.json
+```
+
+- 검사 내용: outline 정확히 9장 / n 1~9 순차 / role / 첫 장 Cover·마지막 장 Outro / CTA 행동 1개 / 금칙어 (`saturated_patterns` 는 제외)
+- `FAIL` 이면 Phase 2 로 넘어가지 말고, 출력된 오류를 그대로 `carousel-researcher` 에게 전달해 brief.json 을 고치게 한 뒤 재검사 (메인이 직접 고치지 않음)
+
 ---
 
 ## 엔진 선택
@@ -54,7 +63,7 @@ CLAUDE.md "듀얼 엔진" 기준으로 판단. 명시 없으면 **HTML(기본)**
 > ## 출력
 > - `templates/slides.<topic>.json` 에 저장 (scheme: example.json 동일)
 
-**주의**: 저장 순간 PostToolUse 훅이 `quality-check.js --prompt templates/slides.<topic>.json` 자동 실행 — JSON 스키마 검증.
+**주의**: 저장 순간 PostToolUse 훅이 `quality-check.js --prompt templates/slides.<topic>.json` 자동 실행 — JSON 스키마·금칙어 검증. 훅은 FAIL 일 때만 결과를 돌려주므로 출력이 없으면 PASS.
 
 ## Phase 2b — HTML 작성 (HTML 엔진, 기본)
 
@@ -111,6 +120,7 @@ python scripts/typo-check.py --topic <topic>
 > output/<topic>/ 의 9장 PNG 를 10항목 채점해줘.
 > - 자동 검사: `node scripts/quality-check.js --dir output/<topic>`
 > - 한글 오타: `output/<topic>/typo-report.json` 결과 반영 + 따옴표 밖 문구는 육안 확인
+> - 모바일 가독성(390px 환산 크기·보조 텍스트 대비·24px 미만)과 HTML 트랙 웹폰트 적용은 에이전트 정의의 기준대로 근거와 함께 채점
 > - 총점 + 상위 3개 개선 포인트 + 판정 (PASS/HOLD/FAIL)
 > - 직접 수정하지 말고 지적만
 
@@ -118,8 +128,14 @@ python scripts/typo-check.py --topic <topic>
 
 ## 5. 마무리
 
-- `output/<topic>/README.md` 자동 작성 (주제 요약 + 사용 가이드)
-- `output/<topic>/metadata.json` 에 생성 메타 (비용/시간/품질점수) 기록
+- `output/<topic>/README.md` — 두 생성기가 끝날 때 `scripts/write-readme.js` 로 자동 작성 (주제 / 구조 / Cover 훅 / 9장 역할 / 생성 이력 / 품질 결과 / 업로드 전 체크리스트). 파일에 기록된 값만 옮김
+- 생성 뒤에 typo-check 를 돌렸거나 슬라이드를 고쳐 다시 검사했다면 README 를 갱신:
+
+```bash
+node scripts/write-readme.js --topic <topic>
+```
+
+- `output/<topic>/metadata.json` — 생성기가 실행 이력(시간/모델/슬라이드별 결과)을 자동 기록. 비용과 reviewer 점수는 파일에 기록되지 않으므로 아래 보고에 직접 적는다
 
 ---
 

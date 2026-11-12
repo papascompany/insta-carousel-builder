@@ -29,6 +29,7 @@ python scripts/typo-check.py --topic $ARGUMENTS
 
 > output/$ARGUMENTS 폴더의 9장 PNG 를 10항목 채점해줘.
 > 한글 오타는 typo-report.json 결과 반영 + 따옴표 밖 문구는 육안 확인.
+> 모바일 가독성과 HTML 트랙 웹폰트 적용은 에이전트 정의의 기준대로 근거와 함께 채점.
 > 총점 + 상위 3개 개선 포인트 + 판정(PASS/HOLD/FAIL).
 
 ## 3. 리포트 저장

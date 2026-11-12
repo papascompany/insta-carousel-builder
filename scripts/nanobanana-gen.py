@@ -125,6 +125,17 @@ def run_quality_check(out_dir: Path) -> int | None:
     return r.returncode
 
 
+def run_write_readme(out_dir: Path) -> None:
+    """결과 폴더 README 작성 (write-readme.js). 실패해도 생성 결과(종료 코드)에는 영향 없음."""
+    node = shutil.which("node")
+    if not node:
+        return
+    sys.stdout.flush()
+    r = subprocess.run([node, str(REPO_ROOT / "scripts" / "write-readme.js"), "--dir", str(out_dir)])
+    if r.returncode != 0:
+        print("[WARN] README 작성 실패 — 직접 실행: node scripts/write-readme.js --dir", out_dir)
+
+
 def record_run(out_dir: Path, topic: str, engine: str, run: dict, roles: list[str]) -> None:
     """output/<topic>/metadata.json 에 실행 이력 추가, output/_index.json 에 주제 요약 갱신."""
     meta_path = out_dir / "metadata.json"
@@ -271,6 +282,7 @@ def main():
 
     failed = [n for n, status, *_ in summary if status != "OK"]
     check = None if args.skip_check else run_quality_check(out_dir)
+    run_write_readme(out_dir)  # quality-report.json 을 읽으므로 검사 뒤에 실행
     if failed:
         print(f"[FAIL] 생성 실패 슬라이드 {failed} → --only {','.join(map(str, failed))} 로 재시도")
     if failed or check == 1:
