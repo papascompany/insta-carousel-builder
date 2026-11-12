@@ -71,7 +71,7 @@ Phase 3b (HTML):
 | 7 | **금칙어** | `knowledge/banned-words.json` 참조 |
 | 8 | **톤** | 친근한 전문가. "안녕하세요 오늘은" 같은 filler 금지 |
 
-→ `scripts/quality-check.js` 가 생성 직후 자동 검사 (구조/개수/해상도·실제 포맷/파일 크기/금칙어 — HTML 트랙은 `--html` 로 금칙어 검사). 오타 발견 시 해당 슬라이드만 `--only N` 으로 재생성.
+→ `scripts/quality-check.js` 가 생성 직후 자동 검사 (구조/개수/해상도·실제 포맷/파일 크기/금칙어 — HTML 트랙은 `--html` 로 금칙어 검사, 리서치 브리프는 `--brief` 로 9장 구조·CTA 1개·금칙어 검사). 오타 발견 시 해당 슬라이드만 `--only N` 으로 재생성.
 
 ---
 
@@ -94,6 +94,7 @@ Phase 3b (HTML):
 ```
 Phase 1 [리서치/기획]  → carousel-researcher 서브에이전트 dispatch
                           주제 요약, 9장 구조 초안, hook 후보 생성
+                          → scripts/quality-check.js --brief output/{topic}/brief.json (FAIL 이면 Phase 2 진입 금지)
 Phase 2 [설계]        → 나노바나나: carousel-prompt-writer → templates/slides.{topic}.json
                           HTML(기본): carousel-html-writer → output/{topic}/slides/slide-01~09.html
 Phase 3 [생성]        → 나노바나나: scripts/nanobanana-gen.py (Gemini 이미지 → 1080×1350 PNG)

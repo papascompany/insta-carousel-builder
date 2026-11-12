@@ -31,6 +31,15 @@ argument-hint: <주제/키워드>
 > - Cover 후킹 각도 + Outro CTA
 > - 결과를 `output/<폴더>/brief.json` 에 저장
 
+**Phase 1 검사 (다음 단계로 넘어가기 전 필수)**:
+
+```bash
+node scripts/quality-check.js --brief output/<폴더>/brief.json
+```
+
+- 검사 내용: outline 정확히 9장 / n 1~9 순차 / role / 첫 장 Cover·마지막 장 Outro / CTA 행동 1개 / 금칙어 (`saturated_patterns` 는 제외)
+- `FAIL` 이면 Phase 2 로 넘어가지 말고, 출력된 오류를 그대로 `carousel-researcher` 에게 전달해 brief.json 을 고치게 한 뒤 재검사 (메인이 직접 고치지 않음)
+
 ---
 
 ## 엔진 선택

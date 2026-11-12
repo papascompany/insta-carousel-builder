@@ -115,7 +115,7 @@ insta-carousel-builder/
 ├── scripts/
 │   ├── nanobanana-gen.py      # 이미지 생성기 (Python, Gemini SDK)
 │   ├── html-carousel-gen.js   # HTML → PNG 캡처 (Puppeteer)
-│   ├── quality-check.js       # 구조/해상도/파일 검사 (Node.js)
+│   ├── quality-check.js       # 구조/해상도/파일/금칙어 검사 — --prompt / --dir / --html / --brief (Node.js)
 │   ├── typo-check.py          # 한글 오타 검사 (Gemini 비전 전사 + 스크립트 판정)
 │   └── hook-post-write.js     # PostToolUse 훅 → Claude 가 직접 쓴 JSON/HTML 저장 시 quality-check
 ├── assets/fonts/pretendard/    # Pretendard Variable (SIL OFL 1.1) — HTML 캡처 시 CDN 대신 로컬 서빙

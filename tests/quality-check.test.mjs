@@ -88,3 +88,92 @@ test('--html: 샘플 HTML 9장은 PASS', () => {
   const r = run(QUALITY_CHECK, ['--html', join(REPO_ROOT, 'docs', 'sample-html')]);
   assert.equal(r.status, 0, r.stdout);
 });
+
+function validBrief() {
+  const body = Array.from({ length: 7 }, (_, i) => ({ n: i + 2, role: `TIP 0${i + 1}`, core_message: `포인트 ${i + 1}` }));
+  return {
+    topic: '테스트 주제',
+    recommended_structure: '팁 나열',
+    recommended_cover_hook: '첫 줄\n둘째 줄',
+    nine_slide_outline: [
+      { n: 1, role: 'Cover', core_message: '후킹' },
+      ...body,
+      { n: 9, role: 'Outro', core_message: '저장 유도' },
+    ],
+    saturated_patterns: ['"대박 꿀팁" 식 과장 표현'],
+    cta_suggestion: "저장 — '다음에 꺼내 보게 저장해 두세요'",
+  };
+}
+
+function runBrief(brief) {
+  const file = join(tempDir(), 'brief.json');
+  writeFileSync(file, typeof brief === 'string' ? brief : JSON.stringify(brief));
+  return run(QUALITY_CHECK, ['--brief', file]);
+}
+
+test('--brief: 정상 브리프는 PASS (saturated_patterns 의 금칙어는 검사 제외)', () => {
+  const r = runBrief(validBrief());
+  assert.equal(r.status, 0, r.stdout);
+  assert.match(r.stdout, /상태: PASS/);
+  assert.match(r.stdout, /슬라이드 수: 9 \/ 9/);
+});
+
+test('--brief: 9장이 아니면 FAIL', () => {
+  const brief = validBrief();
+  brief.nine_slide_outline.splice(4, 1);
+  const r = runBrief(brief);
+  assert.equal(r.status, 1);
+  assert.match(r.stdout, /nine_slide_outline 8장/);
+});
+
+test('--brief: n 순서 오류, role 누락, 객체가 아닌 항목은 FAIL', () => {
+  const brief = validBrief();
+  brief.nine_slide_outline[2].n = 7;
+  delete brief.nine_slide_outline[3].role;
+  brief.nine_slide_outline[4] = '... 9장 전부';
+  const r = runBrief(brief);
+  assert.equal(r.status, 1);
+  assert.match(r.stdout, /nine_slide_outline\[2\]\.n 이 7 \(기대: 3\)/);
+  assert.match(r.stdout, /nine_slide_outline\[3\]\.role 누락/);
+  assert.match(r.stdout, /nine_slide_outline\[4\] 가 객체가 아님/);
+});
+
+test('--brief: 첫 장 Cover / 마지막 장 Outro 가 아니면 FAIL', () => {
+  const brief = validBrief();
+  brief.nine_slide_outline[0].role = 'TIP 00';
+  brief.nine_slide_outline[8].role = 'TIP 08';
+  const r = runBrief(brief);
+  assert.equal(r.status, 1);
+  assert.match(r.stdout, /첫 장 role 이 Cover 가 아님: "TIP 00"/);
+  assert.match(r.stdout, /마지막 장 role 이 Outro 계열이 아님: "TIP 08"/);
+});
+
+test('--brief: CTA 행동이 2개이거나 없으면 FAIL', () => {
+  const two = validBrief();
+  two.cta_suggestion = '저장하고 친구에게 공유';
+  const r2 = runBrief(two);
+  assert.equal(r2.status, 1);
+  assert.match(r2.stdout, /cta_suggestion 에 행동 2개 \(저장, 공유\)/);
+
+  const none = validBrief();
+  none.cta_suggestion = '댓글 남기기';
+  const r0 = runBrief(none);
+  assert.equal(r0.status, 1);
+  assert.match(r0.stdout, /cta_suggestion 에 행동 없음/);
+});
+
+test('--brief: saturated_patterns 밖의 금칙어는 위치와 함께 FAIL', () => {
+  const brief = validBrief();
+  brief.nine_slide_outline[1].core_message = '레전드 활용법';
+  brief.recommended_cover_hook = '여러분, 이건 꼭';
+  const r = runBrief(brief);
+  assert.equal(r.status, 1);
+  assert.match(r.stdout, /nine_slide_outline\[1\]\.core_message: 금칙어 "레전드"/);
+  assert.match(r.stdout, /recommended_cover_hook: 금칙어 "여러분"/);
+  assert.doesNotMatch(r.stdout, /saturated_patterns/);
+});
+
+test('--brief: 깨진 JSON 과 없는 파일은 FAIL', () => {
+  assert.equal(runBrief('{not json').status, 1);
+  assert.equal(run(QUALITY_CHECK, ['--brief', join(tempDir(), 'none.json')]).status, 1);
+});
