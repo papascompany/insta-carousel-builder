@@ -1,0 +1,51 @@
+{
+  "topic": "2026-11-11_AIwritingtips",
+  "engine": "html",
+  "updated_at": "2026-11-11T16:04:14.619Z",
+  "runs": [
+    {
+      "started_at": "2026-11-11T15:56:06.050Z",
+      "finished_at": "2026-11-11T15:56:22.177Z",
+      "duration_sec": 16.1,
+      "viewport": {
+        "width": 1080,
+        "height": 1350,
+        "deviceScaleFactor": 2
+      },
+      "only": null,
+      "slides": [
+        "slide-01.png",
+        "slide-02.png",
+        "slide-03.png",
+        "slide-04.png",
+        "slide-05.png",
+        "slide-06.png",
+        "slide-07.png",
+        "slide-08.png",
+        "slide-09.png"
+      ]
+    },
+    {
+      "started_at": "2026-11-11T16:03:58.999Z",
+      "finished_at": "2026-11-11T16:04:14.619Z",
+      "duration_sec": 15.6,
+      "viewport": {
+        "width": 1080,
+        "height": 1350,
+        "deviceScaleFactor": 2
+      },
+      "only": null,
+      "slides": [
+        "slide-01.png",
+        "slide-02.png",
+        "slide-03.png",
+        "slide-04.png",
+        "slide-05.png",
+        "slide-06.png",
+        "slide-07.png",
+        "slide-08.png",
+        "slide-09.png"
+      ]
+    }
+  ]
+}
