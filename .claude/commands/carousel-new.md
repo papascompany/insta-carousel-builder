@@ -111,6 +111,7 @@ python scripts/typo-check.py --topic <topic>
 > output/<topic>/ 의 9장 PNG 를 10항목 채점해줘.
 > - 자동 검사: `node scripts/quality-check.js --dir output/<topic>`
 > - 한글 오타: `output/<topic>/typo-report.json` 결과 반영 + 따옴표 밖 문구는 육안 확인
+> - 모바일 가독성(390px 환산 크기·보조 텍스트 대비·24px 미만)과 HTML 트랙 웹폰트 적용은 에이전트 정의의 기준대로 근거와 함께 채점
 > - 총점 + 상위 3개 개선 포인트 + 판정 (PASS/HOLD/FAIL)
 > - 직접 수정하지 말고 지적만
 

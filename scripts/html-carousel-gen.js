@@ -205,7 +205,7 @@ async function captureSlides({ slidesDir, outputDir, only, allowFallbackFont }) 
     warnings.forEach((w) => console.log(`   - ${w}`));
     console.log('');
   }
-  return files.map((f) => f.replace('.html', '.png'));
+  return { captured: files.map((f) => f.replace('.html', '.png')), warnings };
 }
 
 /** "3,7" → [3, 7]. 숫자가 아니면 종료 */
@@ -244,7 +244,7 @@ async function main() {
   }
 
   const startedAt = new Date();
-  const captured = await captureSlides({ slidesDir, outputDir, only, allowFallbackFont });
+  const { captured, warnings } = await captureSlides({ slidesDir, outputDir, only, allowFallbackFont });
   const finishedAt = new Date();
   recordRun({
     outputDir,
@@ -256,6 +256,9 @@ async function main() {
       viewport: CONFIG,
       only,
       slides: captured,
+      // reviewer 가 모바일 가독성·웹폰트 적용을 판단하는 근거
+      allow_fallback_font: allowFallbackFont,
+      small_text_warnings: warnings,
     },
   });
 
