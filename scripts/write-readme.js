@@ -19,7 +19,7 @@
  * 두 생성기가 끝날 때 자동 실행한다. typo-check 나 재검사 뒤에는 이 명령을 다시 실행해 갱신.
  */
 import { readFileSync, existsSync, writeFileSync, statSync } from 'node:fs';
-import { join, dirname, basename, resolve } from 'node:path';
+import { join, dirname, basename, resolve, relative, isAbsolute, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const REPO_ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
@@ -85,7 +85,7 @@ function runResult(run) {
   return failed.length > 0 ? `${ok}, 실패 ${failed.map((s) => `slide-${String(s.n).padStart(2, '0')}(${s.status})`).join(', ')}` : ok;
 }
 
-function buildReadme({ folder, brief, metadata, quality, typo, prompts }) {
+function buildReadme({ folder, location, brief, metadata, quality, typo, prompts }) {
   const out = [];
   const title = [brief?.topic, metadata?.topic, folder].find(isText);
   const engine = metadata?.engine;
@@ -98,7 +98,7 @@ function buildReadme({ folder, brief, metadata, quality, typo, prompts }) {
   // ── 주제
   out.push('## 주제', '');
   out.push(`- 주제: ${isText(brief?.topic) ? brief.topic : `${NONE} (brief.json 없음)`}`);
-  out.push(`- 폴더: \`output/${folder}/\``);
+  out.push(`- 폴더: \`${location}/\``);
   if (isText(brief?.researched_at)) out.push(`- 리서치 날짜: ${brief.researched_at}`);
   if (isText(brief?.target_audience)) out.push(`- 타깃: ${brief.target_audience}`);
   out.push('');
@@ -172,7 +172,7 @@ function buildReadme({ folder, brief, metadata, quality, typo, prompts }) {
       out.push('', ...table(['파일', '크기(KB)', '해상도'], quality.sizes.map((s) => [s.file, s.kb, s.px])));
     }
   } else {
-    out.push(`${NONE} (quality-report.json 없음 — \`node scripts/quality-check.js --dir output/${folder}\`)`);
+    out.push(`${NONE} (quality-report.json 없음 — \`node scripts/quality-check.js --dir ${location}\`)`);
   }
   out.push('', '### 한글 오타 (typo-check)', '');
   if (typo) {
@@ -233,8 +233,12 @@ function main() {
     process.exit(1);
   }
 
+  // 레포 안이면 레포 기준 경로(output/<topic>, docs/<sample>), 밖이면 폴더명만 표시
+  const rel = relative(REPO_ROOT, dir);
+  const inRepo = rel && !rel.startsWith('..') && !isAbsolute(rel);
   const input = {
     folder: basename(dir),
+    location: inRepo ? rel.split(sep).join('/') : basename(dir),
     brief: readJson(join(dir, 'brief.json')),
     metadata: readJson(join(dir, 'metadata.json')),
     quality: readJson(join(dir, 'quality-report.json')),
