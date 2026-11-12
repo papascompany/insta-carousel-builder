@@ -94,10 +94,11 @@ Phase 3b (HTML):
 ```
 Phase 1 [리서치/기획]  → carousel-researcher 서브에이전트 dispatch
                           주제 요약, 9장 구조 초안, hook 후보 생성
-Phase 2 [프롬프트 설계] → carousel-prompt-writer 서브에이전트 dispatch
-                          9장 프롬프트 JSON 작성 (templates/slides.{topic}.json)
-Phase 3 [이미지 생성]  → scripts/nanobanana-gen.py 실행
-                          Gemini 3.0 Pro Image 로 9장 PNG 생성
+Phase 2 [설계]        → 나노바나나: carousel-prompt-writer → templates/slides.{topic}.json
+                          HTML(기본): carousel-html-writer → output/{topic}/slides/slide-01~09.html
+Phase 3 [생성]        → 나노바나나: scripts/nanobanana-gen.py (Gemini 이미지 → 1080×1350 PNG)
+                          HTML: scripts/html-carousel-gen.js (Puppeteer 캡처, 로컬 Pretendard,
+                                폰트 로드 실패 시 중단, 24px 미만 텍스트 경고)
 Phase 4 [품질 검증]    → scripts/quality-check.js (두 생성기가 끝날 때 자동 실행, 생성 실패·FAIL 시 exit 1)
                           → scripts/typo-check.py --topic <topic> (나노바나나만)
                             FAIL 슬라이드만 --only 로 재생성 → typo-check 재실행

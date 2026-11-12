@@ -33,3 +33,31 @@ jobs:
 
       - name: Tests
         run: npm test
+
+  # 실제 Puppeteer 로 샘플 HTML 9장을 캡처하고, 생성기에 내장된 quality-check(해상도·포맷)를 통과하는지 확인
+  html-capture:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install (puppeteer downloads its browser)
+        run: npm ci
+
+      - name: Capture sample HTML
+        run: |
+          mkdir -p output/ci-sample/slides
+          cp docs/sample-html/slide-*.html output/ci-sample/slides/
+          node scripts/html-carousel-gen.js --topic ci-sample
+
+      - name: Upload PNGs for visual review
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-sample-png
+          path: output/ci-sample/*.png
+          if-no-files-found: warn
