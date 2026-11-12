@@ -128,8 +128,14 @@ python scripts/typo-check.py --topic <topic>
 
 ## 5. 마무리
 
-- `output/<topic>/README.md` 자동 작성 (주제 요약 + 사용 가이드)
-- `output/<topic>/metadata.json` 에 생성 메타 (비용/시간/품질점수) 기록
+- `output/<topic>/README.md` — 두 생성기가 끝날 때 `scripts/write-readme.js` 로 자동 작성 (주제 / 구조 / Cover 훅 / 9장 역할 / 생성 이력 / 품질 결과 / 업로드 전 체크리스트). 파일에 기록된 값만 옮김
+- 생성 뒤에 typo-check 를 돌렸거나 슬라이드를 고쳐 다시 검사했다면 README 를 갱신:
+
+```bash
+node scripts/write-readme.js --topic <topic>
+```
+
+- `output/<topic>/metadata.json` — 생성기가 실행 이력(시간/모델/슬라이드별 결과)을 자동 기록. 비용과 reviewer 점수는 파일에 기록되지 않으므로 아래 보고에 직접 적는다
 
 ---
 

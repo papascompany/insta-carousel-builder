@@ -15,6 +15,7 @@
  *   node scripts/html-carousel-gen.js --topic my-topic --only 3,7
  *
  *   # 캡처 후 quality-check.js --dir 이 자동 실행됨 (생략: --skip-check)
+ *   # 이어서 write-readme.js 가 output/{topic}/README.md 를 작성
  *
  * 의존성:
  *   npm install puppeteer
@@ -227,6 +228,14 @@ function runQualityCheck(outputDir) {
   return r.status;
 }
 
+/** 결과 폴더 README 작성. 실패해도 생성 결과(종료 코드)에는 영향 없음 */
+function runWriteReadme(outputDir) {
+  const r = spawnSync(process.execPath, [join(__dirname, 'write-readme.js'), '--dir', outputDir], {
+    stdio: 'inherit',
+  });
+  if (r.status !== 0) console.log('⚠️  README 작성 실패 — 직접 실행: node scripts/write-readme.js --dir', outputDir);
+}
+
 async function main() {
   const FLAGS = ['--skip-check', '--allow-fallback-font'];
   const skipCheck = process.argv.includes('--skip-check');
@@ -262,7 +271,9 @@ async function main() {
     },
   });
 
-  if (!skipCheck && runQualityCheck(outputDir) === 1) process.exit(1);
+  const checkStatus = skipCheck ? 0 : runQualityCheck(outputDir);
+  runWriteReadme(outputDir); // quality-report.json 을 읽으므로 검사 뒤에 실행
+  if (checkStatus === 1) process.exit(1);
 }
 
 main().catch((e) => {

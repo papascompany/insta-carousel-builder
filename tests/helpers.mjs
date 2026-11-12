@@ -8,6 +8,7 @@ import { deflateSync } from 'node:zlib';
 export const REPO_ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 export const QUALITY_CHECK = join(REPO_ROOT, 'scripts', 'quality-check.js');
 export const HOOK = join(REPO_ROOT, 'scripts', 'hook-post-write.js');
+export const WRITE_README = join(REPO_ROOT, 'scripts', 'write-readme.js');
 
 export function tempDir() {
   return mkdtempSync(join(tmpdir(), 'carousel-test-'));

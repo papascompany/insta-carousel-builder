@@ -104,6 +104,7 @@ Phase 4 [품질 검증]    → scripts/quality-check.js (두 생성기가 끝날
                           → scripts/typo-check.py --topic <topic> (나노바나나만)
                             FAIL 슬라이드만 --only 로 재생성 → typo-check 재실행
                           → carousel-reviewer 서브에이전트 10항목 정성 채점
+                          → scripts/write-readme.js --topic <topic> (생성기가 자동 실행, typo-check·재검사 뒤에는 다시 실행)
 ```
 
 **서브에이전트 원칙**:
@@ -121,7 +122,8 @@ output/{topic}/
 ├── prompts.json                  # 사용된 프롬프트 (재현용, 나노바나나 엔진이 자동 기록)
 ├── metadata.json                 # 실행 이력: 시간/모델/슬라이드별 결과 (두 엔진 자동 기록, 비용은 미기록)
 ├── quality-report.json           # quality-check.js --dir 결과
-└── README.md                     # 주제 요약 + 사용 가이드
+└── README.md                     # 주제/구조/Cover 훅/9장 역할/생성 이력/품질 결과/업로드 체크리스트
+                                  #   (두 생성기가 scripts/write-readme.js 로 자동 작성, 갱신: node scripts/write-readme.js --topic <topic>)
 
 output/_index.json                # 주제별 최근 엔진/구조/Cover 훅/역할 목록 (생성기가 자동 갱신)
 ```
