@@ -63,7 +63,7 @@ CLAUDE.md "듀얼 엔진" 기준으로 판단. 명시 없으면 **HTML(기본)**
 > ## 출력
 > - `templates/slides.<topic>.json` 에 저장 (scheme: example.json 동일)
 
-**주의**: 저장 순간 PostToolUse 훅이 `quality-check.js --prompt templates/slides.<topic>.json` 자동 실행 — JSON 스키마 검증.
+**주의**: 저장 순간 PostToolUse 훅이 `quality-check.js --prompt templates/slides.<topic>.json` 자동 실행 — JSON 스키마·금칙어 검증. 훅은 FAIL 일 때만 결과를 돌려주므로 출력이 없으면 PASS.
 
 ## Phase 2b — HTML 작성 (HTML 엔진, 기본)
 
