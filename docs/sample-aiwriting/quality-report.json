@@ -1,0 +1,54 @@
+{
+  "status": "PASS",
+  "errors": [],
+  "warnings": [],
+  "slide_count": 9,
+  "sizes": [
+    {
+      "file": "slide-01.png",
+      "kb": 79,
+      "px": "2160×2700"
+    },
+    {
+      "file": "slide-02.png",
+      "kb": 109,
+      "px": "2160×2700"
+    },
+    {
+      "file": "slide-03.png",
+      "kb": 117,
+      "px": "2160×2700"
+    },
+    {
+      "file": "slide-04.png",
+      "kb": 105,
+      "px": "2160×2700"
+    },
+    {
+      "file": "slide-05.png",
+      "kb": 122,
+      "px": "2160×2700"
+    },
+    {
+      "file": "slide-06.png",
+      "kb": 101,
+      "px": "2160×2700"
+    },
+    {
+      "file": "slide-07.png",
+      "kb": 116,
+      "px": "2160×2700"
+    },
+    {
+      "file": "slide-08.png",
+      "kb": 114,
+      "px": "2160×2700"
+    },
+    {
+      "file": "slide-09.png",
+      "kb": 74,
+      "px": "2160×2700"
+    }
+  ],
+  "checked_at": "2026-11-12T12:30:22.259Z"
+}

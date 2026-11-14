@@ -5,7 +5,7 @@
 
 AI 이미지 도구로 인스타 캐러셀을 만들면 한글이 깨지고 AI 티가 나서 결국 수작업/외주로 돌아간다 — 는 통념을, **두 엔진 골라 쓰기**로 깨는 레포입니다.
 
-**👀 실제 결과물 → [`docs/sample-output/`](./docs/sample-output/) (나노바나나) / [`docs/sample-html/`](./docs/sample-html/) (HTML)**
+**👀 실제 결과물 → [`docs/sample-output/`](./docs/sample-output/) (나노바나나) / [`docs/sample-html/`](./docs/sample-html/) (HTML) / [`docs/sample-aiwriting/`](./docs/sample-aiwriting/) (HTML 풀 파이프라인: 브리프 → HTML → PNG → README)**
 
 ## 듀얼 엔진 비교
 
@@ -115,13 +115,14 @@ insta-carousel-builder/
 ├── scripts/
 │   ├── nanobanana-gen.py      # 이미지 생성기 (Python, Gemini SDK)
 │   ├── html-carousel-gen.js   # HTML → PNG 캡처 (Puppeteer)
-│   ├── quality-check.js       # 구조/해상도/파일 검사 (Node.js)
+│   ├── quality-check.js       # 구조/해상도/파일/금칙어 검사 — --prompt / --dir / --html / --brief (Node.js)
 │   ├── typo-check.py          # 한글 오타 검사 (Gemini 비전 전사 + 스크립트 판정)
+│   ├── write-readme.js        # output/<topic>/README.md 작성 (brief/metadata/quality-report/typo-report 기록만 사용, 생성기가 자동 실행)
 │   └── hook-post-write.js     # PostToolUse 훅 → Claude 가 직접 쓴 JSON/HTML 저장 시 quality-check
 ├── assets/fonts/pretendard/    # Pretendard Variable (SIL OFL 1.1) — HTML 캡처 시 CDN 대신 로컬 서빙
 ├── tests/                      # node --test + unittest (Gemini 호출 없음)
 ├── output/                     # 생성 결과 (gitignored)
-└── docs/                       # 샘플 결과물 (sample-output / sample-html)
+└── docs/                       # 샘플 결과물 (sample-output / sample-html / sample-aiwriting)
 ```
 
 ---
@@ -156,16 +157,31 @@ insta-carousel-builder/
 python scripts/nanobanana-gen.py --topic claude-code-tips --only 3,7
 ```
 
+### HTML 엔진 샘플 (2026-11-12)
+
+`docs/sample-aiwriting/` 는 HTML 엔진으로 한 주제를 끝까지 돌린 결과 폴더입니다. 주제: **"AI 글쓰기 7가지 꿀팁"** (Before/After 구조).
+
+| 파일 | 내용 |
+|:---|:---|
+| `brief.json` | carousel-researcher 브리프 (`quality-check.js --brief` PASS) |
+| `slides/slide-01~09.html` | carousel-html-writer 가 쓴 HTML 9장 |
+| `slide-01~09.png` | Puppeteer 캡처 2160×2700 (1080×1350 의 2배), 74~122 KB |
+| `metadata.json` / `quality-report.json` | 실행 기록과 검사 결과 (PASS, 24px 미만 텍스트 경고 0건) |
+| `README.md` | `scripts/write-readme.js` 가 위 기록으로 작성한 요약 |
+
+다시 캡처하려면 `brief.json` 과 `slides/` 를 `output/<topic>/` 에 복사한 뒤 `node scripts/html-carousel-gen.js --topic <topic>`.
+
 ---
 
 ## 개발 / 테스트
 
 ```bash
-npm test   # quality-check·훅 (Node) + 이미지 정규화·오타 판정·생성기 CLI (Python, pillow 필요)
+npm test   # quality-check·훅·README 작성 (Node) + 이미지 정규화·오타 판정·생성기 CLI (Python, pillow 필요)
 ```
 
 - 테스트는 Gemini / Puppeteer 를 호출하지 않습니다 (가짜 클라이언트). GitHub Actions 가 PR 마다 실행합니다.
 - 두 생성기는 끝날 때 `quality-check.js --dir` 를 자동 실행합니다 (`--skip-check` 로 생략). 생성 실패나 검사 FAIL 이면 exit 1.
+- 이어서 `write-readme.js` 가 `output/<topic>/README.md` 를 작성합니다 (실패해도 종료 코드에 영향 없음). 수동 갱신: `npm run readme -- --topic <topic>`
 - `--only` 는 두 생성기 모두 `3,7` 처럼 쉼표 구분.
 
 ---

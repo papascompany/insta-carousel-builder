@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<style>
+  @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/variable/pretendardvariable.css');
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{width:1080px;height:1350px;background:#131316;font-family:'Pretendard Variable',sans-serif;color:#fff;overflow:hidden;position:relative;word-break:keep-all}
+  .wrap{position:absolute;top:88px;bottom:88px;left:80px;right:80px;display:flex;flex-direction:column}
+  .label{font-size:24px;font-weight:600;letter-spacing:0.13em;color:#CF5C3F;margin-bottom:36px}
+  .head{font-size:50px;font-weight:700;line-height:1.3;letter-spacing:-0.015em}
+  .acc{color:#CF5C3F}
+  .mid{flex:1 1 auto;display:flex;flex-direction:column;justify-content:center;padding:48px 0}
+  .card{border-radius:18px;padding:40px 40px}
+  .before{border:2px dashed rgba(255,255,255,0.3);background:rgba(255,255,255,0.03)}
+  .after{background:rgba(207,92,63,0.1);border:2px solid #CF5C3F}
+  .tag{font-size:24px;font-weight:700;letter-spacing:0.16em;margin-bottom:24px}
+  .before .tag{color:rgba(255,255,255,0.65)}
+  .after .tag{color:#CF5C3F}
+  .flow{display:flex;align-items:center;gap:16px}
+  .node{flex:0 0 auto;padding:18px 22px;border-radius:14px;font-size:32px;font-weight:700;white-space:nowrap}
+  .before .node{border:2px solid rgba(255,255,255,0.35);color:rgba(255,255,255,0.7);text-decoration:line-through;text-decoration-thickness:3px;text-decoration-color:rgba(255,255,255,0.55)}
+  .after .node{border:2px solid rgba(207,92,63,0.8);color:#fff}
+  .after .node.hl{background:#CF5C3F;border-color:#CF5C3F;color:#fff}
+  .line{flex:1 1 auto;height:3px;position:relative;min-width:28px}
+  .line::after{content:'';position:absolute;right:-2px;top:-7px;border-top:8px solid transparent;border-bottom:8px solid transparent}
+  .before .line{background:rgba(255,255,255,0.35)}
+  .before .line::after{border-left:13px solid rgba(255,255,255,0.35)}
+  .after .line{background:#CF5C3F}
+  .after .line::after{border-left:13px solid #CF5C3F}
+  .ghost{flex:0 0 auto;font-size:30px;font-weight:600;color:rgba(255,255,255,0.65)}
+  .arrow{align-self:center;width:0;height:0;margin:28px 0;border-left:18px solid transparent;border-right:18px solid transparent;border-top:22px solid #CF5C3F}
+  .caption{font-size:32px;line-height:1.45;color:rgba(255,255,255,0.65)}
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="label">BEFORE/AFTER 03</div>
+    <div class="head">완성본보다<br/><span class="acc">개요</span>를 먼저 받는다</div>
+
+    <div class="mid">
+      <div class="card before">
+        <div class="tag">BEFORE</div>
+        <div class="flow">
+          <div class="node">"완성본 한 번에 줘"</div>
+          <div class="line"></div>
+          <div class="ghost">처음부터 다시</div>
+        </div>
+      </div>
+      <div class="arrow"></div>
+      <div class="card after">
+        <div class="tag">AFTER</div>
+        <div class="flow">
+          <div class="node">개요 받기</div>
+          <div class="line"></div>
+          <div class="node hl">내가 확정</div>
+          <div class="line"></div>
+          <div class="node">본문 쓰기</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="caption">방향이 틀렸다면 개요 단계에서 고치는 게 가장 덜 아깝다.</div>
+  </div>
+</body>
+</html>

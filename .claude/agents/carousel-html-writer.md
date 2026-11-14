@@ -65,6 +65,13 @@ tools: Read, Write, Grep
 - **slide-02~08 (TIP/STEP/Q&A/BEFORE·AFTER 등)**: 좌측 상단 라벨(구조에 맞게: "TIP 01", "STEP 01", "BEFORE/AFTER 01" 등), 헤드라인, 시각 요소 1개, 캡션
 - **slide-09 (Outro)**: 중앙~하단, CTA 1개에 맞춘 라벨(예: "SAVE FOR LATER") + 결과 약속 헤드라인 + accent bar + CTA. 라벨에 행동 두 개("SAVE & SHARE") 금지
 
+## 저장 후 훅 (PostToolUse)
+
+- `output/<topic>/slides/slide-NN.html` 을 Write 할 때마다 훅이 그 파일의 금칙어 검사(`quality-check.js --html`)를 자동 실행한다.
+- **훅은 FAIL 일 때만 결과를 돌려준다. 출력이 없으면 PASS** — 훅이 실행됐는지 따로 확인하거나 검사를 직접 돌릴 필요 없다.
+- FAIL 결과(금칙어와 파일명)가 돌아오면 그 파일만 고쳐 다시 Write 한다.
+- 훅이 보는 것은 금칙어뿐이다. 글자 크기·대비·폰트는 캡처 단계(`html-carousel-gen.js`)에서 확인되므로 위 표의 기준은 작성 시 직접 지킨다.
+
 ## 철칙
 
 - **이미지 생성/캡처는 하지 않는다** — HTML 파일만 Write

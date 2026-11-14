@@ -177,6 +177,12 @@ class NanobananaCliTest(unittest.TestCase):
         meta = json.loads((out / "metadata.json").read_text(encoding="utf-8"))
         self.assertEqual(len(meta["runs"][0]["slides"]), 9)
         self.assertTrue((out / "prompts.json").exists())
+        # 품질 검사 뒤 README 자동 작성 (brief 가 없으면 9장 역할은 prompts.json 에서)
+        self.assertLess(r.stdout.index("캐러셀 품질 검사"), r.stdout.index("README 작성"))
+        readme = (out / "README.md").read_text(encoding="utf-8")
+        self.assertIn("- 엔진: nanobanana", readme)
+        self.assertIn("OK 9/9", readme)
+        self.assertIn("출처: prompts.json", readme)
         index = json.loads((self.repo / "output" / "_index.json").read_text(encoding="utf-8"))
         self.assertEqual(index["carousels"][0]["topic"], "t")
 

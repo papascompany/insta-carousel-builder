@@ -48,6 +48,13 @@ tools: Read, Write, Grep
 - 받침 복잡한 단어는 **ASCII 로 대체 또는 영문 병기** 고려
 - Cover + Outro 에 한글 오타 나면 신뢰도 치명 → 해당 2장은 프롬프트에 `"exact Korean spelling"` 명시
 
+## 저장 후 훅 (PostToolUse)
+
+- `templates/slides.<topic>.json` 을 Write 하면 훅이 스키마·금칙어 검사(`quality-check.js --prompt`)를 자동 실행한다.
+- **훅은 FAIL 일 때만 결과를 돌려준다. 출력이 없으면 PASS** — 훅이 실행됐는지 따로 확인하거나 검사를 직접 돌릴 필요 없다.
+- FAIL 결과가 돌아오면 지적된 항목(n 순서, role/prompt 누락, 금칙어 등)을 고쳐 다시 Write 한다.
+- 파일명이 `slides.<topic>.json` 형식이 아니면 훅이 걸리지 않는다.
+
 ## 철칙
 
 - **이미지 생성은 하지 않는다** — JSON 파일만 Write

@@ -1,0 +1,79 @@
+{
+  "topic": "2026-11-11_AIwritingtips",
+  "engine": "html",
+  "updated_at": "2026-11-12T12:30:22.115Z",
+  "runs": [
+    {
+      "started_at": "2026-11-12T12:04:33.043Z",
+      "finished_at": "2026-11-12T12:04:51.619Z",
+      "duration_sec": 18.6,
+      "viewport": {
+        "width": 1080,
+        "height": 1350,
+        "deviceScaleFactor": 2
+      },
+      "only": null,
+      "slides": [
+        "slide-01.png",
+        "slide-02.png",
+        "slide-03.png",
+        "slide-04.png",
+        "slide-05.png",
+        "slide-06.png",
+        "slide-07.png",
+        "slide-08.png",
+        "slide-09.png"
+      ],
+      "allow_fallback_font": false,
+      "small_text_warnings": []
+    },
+    {
+      "started_at": "2026-11-12T12:29:50.924Z",
+      "finished_at": "2026-11-12T12:30:06.961Z",
+      "duration_sec": 16,
+      "viewport": {
+        "width": 1080,
+        "height": 1350,
+        "deviceScaleFactor": 2
+      },
+      "only": null,
+      "slides": [
+        "slide-01.png",
+        "slide-02.png",
+        "slide-03.png",
+        "slide-04.png",
+        "slide-05.png",
+        "slide-06.png",
+        "slide-07.png",
+        "slide-08.png",
+        "slide-09.png"
+      ],
+      "allow_fallback_font": false,
+      "small_text_warnings": []
+    },
+    {
+      "started_at": "2026-11-12T12:30:07.353Z",
+      "finished_at": "2026-11-12T12:30:22.115Z",
+      "duration_sec": 14.8,
+      "viewport": {
+        "width": 1080,
+        "height": 1350,
+        "deviceScaleFactor": 2
+      },
+      "only": null,
+      "slides": [
+        "slide-01.png",
+        "slide-02.png",
+        "slide-03.png",
+        "slide-04.png",
+        "slide-05.png",
+        "slide-06.png",
+        "slide-07.png",
+        "slide-08.png",
+        "slide-09.png"
+      ],
+      "allow_fallback_font": false,
+      "small_text_warnings": []
+    }
+  ]
+}

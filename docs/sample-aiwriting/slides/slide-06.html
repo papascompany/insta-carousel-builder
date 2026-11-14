@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<style>
+  @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/variable/pretendardvariable.css');
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{width:1080px;height:1350px;background:#131316;font-family:'Pretendard Variable',sans-serif;color:#fff;overflow:hidden;position:relative;word-break:keep-all}
+  .wrap{position:absolute;top:88px;bottom:88px;left:80px;right:80px;display:flex;flex-direction:column}
+  .label{font-size:24px;font-weight:600;letter-spacing:0.13em;color:#CF5C3F;margin-bottom:36px}
+  .head{font-size:50px;font-weight:700;line-height:1.3;letter-spacing:-0.015em}
+  .acc{color:#CF5C3F}
+  .mid{flex:1 1 auto;display:flex;flex-direction:column;justify-content:center;padding:48px 0}
+  /* 좌우 분할 형식 */
+  .split{display:grid;grid-template-columns:1fr 1fr;gap:24px;min-height:460px}
+  .col{border-radius:18px;padding:40px 36px;display:flex;flex-direction:column}
+  .before{border:2px dashed rgba(255,255,255,0.3);background:rgba(255,255,255,0.03)}
+  .after{background:rgba(207,92,63,0.1);border:2px solid #CF5C3F}
+  .tag{font-size:24px;font-weight:700;letter-spacing:0.16em;padding-bottom:22px;margin-bottom:28px}
+  .before .tag{color:rgba(255,255,255,0.65);border-bottom:2px solid rgba(255,255,255,0.15)}
+  .after .tag{color:#CF5C3F;border-bottom:2px solid rgba(207,92,63,0.5)}
+  .before .txt{font-size:38px;line-height:1.5;color:rgba(255,255,255,0.7);text-decoration:line-through;text-decoration-thickness:3px;text-decoration-color:rgba(255,255,255,0.55)}
+  .after .txt{font-size:38px;line-height:1.5;color:#fff;font-weight:600}
+  .caption{font-size:32px;line-height:1.45;color:rgba(255,255,255,0.65)}
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="label">BEFORE/AFTER 05</div>
+    <div class="head">'더 좋게' 대신<br/><span class="acc">고칠 기준</span>을 콕 집는다</div>
+
+    <div class="mid">
+      <div class="split">
+        <div class="col before">
+          <div class="tag">BEFORE</div>
+          <div class="txt">"더 좋게 고쳐줘"</div>
+        </div>
+        <div class="col after">
+          <div class="tag">AFTER</div>
+          <div class="txt">"반복되는 단어는 바꾸고, 긴 문장은 둘로 나눠줘."</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="caption">기준이 없으면 AI는 멀쩡한 문장까지 손댄다.</div>
+  </div>
+</body>
+</html>

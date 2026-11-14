@@ -47,3 +47,5 @@ tools: Read, Write, Bash, WebSearch, WebFetch, Grep
 - 각 슬라이드 `core_message` 는 **한 줄 요약**만 (프롬프트 설계는 다음 에이전트 담당)
 - 7가지 구조 중 하나를 명시적으로 선택 (여러 개 제안 금지)
 - 피해야 할 포화 패턴 반드시 포함 (변별력)
+- 저장 후 메인이 `node scripts/quality-check.js --brief <brief.json>` 로 검사한다. 통과 조건: `nine_slide_outline` 정확히 9개 객체(n 1~9 순차, role 필수), 첫 장 role 에 "Cover"·마지막 장 role 에 "Outro", `cta_suggestion` 에 저장/공유/팔로우 중 **하나만**, 금칙어 없음
+- 금칙어 원문은 `saturated_patterns` 에만 적을 수 있다 (그 필드만 금칙어 검사 제외)
