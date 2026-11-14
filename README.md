@@ -64,7 +64,7 @@ AI 이미지 도구로 인스타 캐러셀을 만들면 한글이 깨지고 AI �
 
 ```bash
 # 1. 레포 clone
-git clone https://github.com/ainow/insta-carousel-builder.git
+git clone https://github.com/papascompany/insta-carousel-builder.git
 cd insta-carousel-builder
 
 # 2. 의존성 설치
