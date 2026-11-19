@@ -80,6 +80,8 @@ node scripts/html-carousel-gen.js --topic my-first
 
 결과: `output/my-first/slide-01.png ~ slide-09.png` (2160×2700, 1080×1350 의 2배) + `quality-report.json` + `README.md`
 
+> 캡처가 `Could not find Chrome` 으로 실패하면 puppeteer 의 설치 스크립트가 실행되지 않은 것입니다 (최신 npm 은 설치 스크립트를 승인 전까지 막을 수 있음). `npx puppeteer browsers install chrome` 으로 브라우저를 직접 받으세요.
+
 ### B. Claude Code 로 주제부터 끝까지
 
 레포 폴더에서 Claude Code 를 열고 주제를 말하면 리서치 → HTML 9장 → 캡처 → 리뷰까지 진행합니다.
