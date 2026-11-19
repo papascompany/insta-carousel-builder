@@ -39,7 +39,9 @@ tools: Read, Write, Bash, WebSearch, WebFetch, Grep
 
 1. **WebSearch**: "$주제 인스타 카드뉴스", "$주제 캐러셀 2026" 등
 2. **내부 지식 참조**: `knowledge/patterns/carousel-structure.md` (9장 구조 7가지)
-3. **브랜드 팩트 참조**: `knowledge/brand-facts.md` 수치 외엔 인용 금지
+3. **브랜드 팩트 참조**: `knowledge/brand-facts.md` 수치 외엔 인용 금지. `<...>` 자리표시자가 그대로면 값이 없는 것이므로 브랜드명·수치를 지어내지 않는다
+4. **최근 패턴 참조**: `output/_index.json` (있다면) — 최근 주제와 같은 구조·Cover 훅은 피한다
+5. **경쟁 분석 대체 기준**: 인스타 게시물이 검색되지 않으면 같은 주제의 블로그·뉴스레터 글로 대체하고 `url_or_creator` 에 실제 URL 을 적는다 (없는 계정을 지어내지 않는다)
 
 ## 철칙
 
