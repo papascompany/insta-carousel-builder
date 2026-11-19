@@ -28,8 +28,8 @@ AI 이미지 도구로 인스타 캐러셀을 만들면 한글이 깨지고 AI �
 
 에이나우(AINOW) 내부에서 실사용 중인 인스타 캐러셀 생성 파이프라인을 오픈소스로 공개한 버전입니다.
 
-- ✅ `.env` 에 Gemini API 키 하나 + `npx` 한 줄이면 재현 가능
-- ✅ `templates/slides.example.json` 의 프롬프트 9개만 수정하면 본인 콘텐츠로 교체
+- ✅ HTML 엔진은 `npm install` 만으로 재현 가능 (API 키 불필요), 나노바나나 엔진은 `.env` 에 유료 등급 Gemini API 키 하나
+- ✅ 주제만 말하면 Claude Code 가 9장을 설계 (`/carousel-new`), 또는 `templates/slides.example.json` 의 프롬프트 9개를 직접 수정
 - ✅ Claude Code `.claude/agents/` + `.claude/commands/` 하네스로 품질 검증까지 자동화
 - ✅ 디자인 DNA(`#131316` + `#CF5C3F` + Pretendard) 유지된 채로 주제만 바뀜
 
@@ -62,30 +62,60 @@ AI 이미지 도구로 인스타 캐러셀을 만들면 한글이 깨지고 AI �
 
 ## 빠른 시작 (Quickstart)
 
+### A. HTML 엔진 — 기본, 0원, API 키 불필요
+
 ```bash
 # 1. 레포 clone
 git clone https://github.com/papascompany/insta-carousel-builder.git
 cd insta-carousel-builder
 
-# 2. 의존성 설치
-pip install python-dotenv google-genai pillow
-npm install  # (optional, 품질 체크 훅용)
+# 2. 의존성 설치 (Node.js 20 이상, puppeteer 가 캡처용 브라우저를 내려받음)
+npm install
 
-# 3. API 키 세팅 (나노바나나는 유료 등급 키 필요 — 위 "무료 등급 안내" 참고)
+# 3. 샘플 9장을 캡처해 설치 확인
+mkdir -p output/my-first/slides
+cp docs/sample-html/slide-*.html output/my-first/slides/
+node scripts/html-carousel-gen.js --topic my-first
+```
+
+결과: `output/my-first/slide-01.png ~ slide-09.png` (2160×2700, 1080×1350 의 2배) + `quality-report.json` + `README.md`
+
+> 캡처가 `Could not find Chrome` 으로 실패하면 puppeteer 의 설치 스크립트가 실행되지 않은 것입니다 (최신 npm 은 설치 스크립트를 승인 전까지 막을 수 있음). `npx puppeteer browsers install chrome` 으로 브라우저를 직접 받으세요.
+
+### B. Claude Code 로 주제부터 끝까지
+
+레포 폴더에서 Claude Code 를 열고 주제를 말하면 리서치 → HTML 9장 → 캡처 → 리뷰까지 진행합니다.
+
+```
+/carousel-new 바이브코딩 처음 시작하는 사람을 위한 가이드
+```
+
+- 엔진을 말하지 않으면 HTML 엔진으로 만듭니다. "나노바나나로" 라고 하면 Gemini 엔진을 씁니다.
+- **먼저 `knowledge/brand-facts.md` 를 본인 브랜드로 채우세요.** 수치와 브랜드명은 이 파일에서만 인용합니다. 비워 두면 브랜드 정보 없이 주제 내용만으로 만듭니다.
+- 이미 만든 폴더만 다시 검증: `/carousel-quality <폴더명>`
+
+### C. 나노바나나 엔진 — 유료 등급 Gemini 키 필요
+
+```bash
+# 1. 의존성 설치 (Python 3.10 이상)
+pip install python-dotenv google-genai pillow
+
+# 2. API 키 세팅 (위 "무료 등급 안내" 참고)
 cp .env.example .env
 # .env 열어서 GEMINI_API_KEY 채우기 — https://aistudio.google.com/apikey
 
-# 4. 기본 예제 생성 (에이나우 Claude Code 7가지 꿀팁)
+# 3. 기본 예제 생성 (에이나우 Claude Code 7가지 꿀팁)
 python scripts/nanobanana-gen.py --topic claude-code-tips
 
-# 5. 본인 주제로 수정
-# templates/slides.example.json 을 복사해서 프롬프트 9장 수정
+# 4. 본인 주제로 수정: templates/slides.example.json 을 복사해 프롬프트 9장 수정
 cp templates/slides.example.json templates/slides.my-topic.json
-# 수정 후:
 python scripts/nanobanana-gen.py --topic my-topic --slides templates/slides.my-topic.json
+
+# 5. 한글 오타 검사
+python scripts/typo-check.py --topic my-topic
 ```
 
-결과: `output/{topic}/slide-01.png ~ slide-09.png`
+결과: `output/{topic}/slide-01.png ~ slide-09.png` (1080×1350)
 
 ---
 
@@ -127,12 +157,10 @@ insta-carousel-builder/
 
 ---
 
----
-
 ## 샘플 결과 (실측, 2026-04-15)
 
 `docs/sample-output/slide-01.png ~ slide-09.png` 가 실제 생성된 9장입니다.
-주제: **"Claude Code 7가지 꿀팁"** (`templates/slides.example.json` 그대로 실행).
+주제: **"Claude Code 7가지 꿀팁"** (`templates/slides.example.json` 으로 실행. 이후 Outro 라벨만 CTA 1개 규칙에 맞춰 `SAVE & SHARE` → `SAVE FOR LATER` 로 고쳤고, 샘플 PNG 는 고치기 전 프롬프트의 결과).
 
 | 항목 | 결과 |
 |:---|:---|

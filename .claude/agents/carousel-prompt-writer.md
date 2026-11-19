@@ -51,7 +51,7 @@ tools: Read, Write, Grep
 ## 저장 후 훅 (PostToolUse)
 
 - `templates/slides.<topic>.json` 을 Write 하면 훅이 스키마·금칙어 검사(`quality-check.js --prompt`)를 자동 실행한다.
-- **훅은 FAIL 일 때만 결과를 돌려준다. 출력이 없으면 PASS** — 훅이 실행됐는지 따로 확인하거나 검사를 직접 돌릴 필요 없다.
+- **훅은 FAIL 일 때만 결과를 돌려준다. `quality-check` 의 FAIL 메시지가 없으면 PASS** — 다른 훅이나 도구가 덧붙인 출력은 이 검사와 무관하다. 훅이 실행됐는지 따로 확인하거나 검사를 직접 돌릴 필요 없다.
 - FAIL 결과가 돌아오면 지적된 항목(n 순서, role/prompt 누락, 금칙어 등)을 고쳐 다시 Write 한다.
 - 파일명이 `slides.<topic>.json` 형식이 아니면 훅이 걸리지 않는다.
 

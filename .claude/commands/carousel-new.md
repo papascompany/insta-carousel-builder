@@ -63,7 +63,7 @@ CLAUDE.md "듀얼 엔진" 기준으로 판단. 명시 없으면 **HTML(기본)**
 > ## 출력
 > - `templates/slides.<topic>.json` 에 저장 (scheme: example.json 동일)
 
-**주의**: 저장 순간 PostToolUse 훅이 `quality-check.js --prompt templates/slides.<topic>.json` 자동 실행 — JSON 스키마·금칙어 검증. 훅은 FAIL 일 때만 결과를 돌려주므로 출력이 없으면 PASS.
+**주의**: 저장 순간 PostToolUse 훅이 `quality-check.js --prompt templates/slides.<topic>.json` 자동 실행 — JSON 스키마·금칙어 검증. 훅은 FAIL 일 때만 결과를 돌려주므로 `quality-check` 의 FAIL 메시지가 없으면 PASS (다른 훅의 출력은 무관).
 
 ## Phase 2b — HTML 작성 (HTML 엔진, 기본)
 
@@ -75,7 +75,7 @@ CLAUDE.md "듀얼 엔진" 기준으로 판단. 명시 없으면 **HTML(기본)**
 > - 에이전트 정의의 모바일 가독성 규칙(텍스트 24px 이상, 보조 텍스트 투명도 0.6 이상) 준수
 > - PNG 캡처는 하지 말 것
 
-저장마다 훅이 금칙어 검사(`quality-check.js --html`). 훅은 FAIL 일 때만 결과를 돌려주므로 출력이 없으면 PASS.
+저장마다 훅이 금칙어 검사(`quality-check.js --html`). 훅은 FAIL 일 때만 결과를 돌려주므로 `quality-check` 의 FAIL 메시지가 없으면 PASS (다른 훅의 출력은 무관).
 
 ---
 
