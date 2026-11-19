@@ -148,7 +148,7 @@ insta-carousel-builder/
 │   ├── quality-check.js       # 구조/해상도/파일/금칙어 검사 — --prompt / --dir / --html / --brief (Node.js)
 │   ├── typo-check.py          # 한글 오타 검사 (Gemini 비전 전사 + 스크립트 판정)
 │   ├── write-readme.js        # output/<topic>/README.md 작성 (brief/metadata/quality-report/typo-report 기록만 사용, 생성기가 자동 실행)
-│   └── hook-post-write.js     # PostToolUse 훅 → Claude 가 직접 쓴 JSON/HTML 저장 시 quality-check
+│   └── hook-post-write.js     # PostToolUse 훅 → Claude 가 직접 쓴 브리프/JSON/HTML 저장 시 quality-check
 ├── assets/fonts/pretendard/    # Pretendard Variable (SIL OFL 1.1) — HTML 캡처 시 CDN 대신 로컬 서빙
 ├── tests/                      # node --test + unittest (Gemini 호출 없음)
 ├── output/                     # 생성 결과 (gitignored)

@@ -38,6 +38,7 @@ node scripts/quality-check.js --brief output/<폴더>/brief.json
 ```
 
 - 검사 내용: outline 정확히 9장 / n 1~9 순차 / role / 첫 장 Cover·마지막 장 Outro / CTA 행동 1개 / 금칙어 (`saturated_patterns` 는 제외)
+- `carousel-researcher` 가 Write 로 저장하면 PostToolUse 훅도 같은 검사를 실행해 FAIL 을 리서처에게 바로 돌려준다. 훅은 Write/Edit 저장에만 걸리므로 위 명령은 그와 관계없이 반드시 실행
 - `FAIL` 이면 Phase 2 로 넘어가지 말고, 출력된 오류를 그대로 `carousel-researcher` 에게 전달해 brief.json 을 고치게 한 뒤 재검사 (메인이 직접 고치지 않음)
 
 ---
